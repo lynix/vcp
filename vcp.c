@@ -534,17 +534,17 @@ int clone_attrs(struct file *src, char *dst)
 	
 	/* set owner uid/gid */
 	if (chown(dst, src->uid, src->gid) != 0) {
-		print_error("failed to set uid/gid");
+		print_debug("failed to set uid/gid");
 		retval = -1;
 	}
 	/* set mode */
 	if (chmod(dst, src->mode) != 0) {
-		print_error("failed to set mode");
+		print_debug("failed to set mode");
 		retval = -1;
 	}
 	/* set atime/mtime */
 	if (utime(dst, &(src->times)) != 0) {
-		print_error("failed to set atime/mtime");
+		print_debug("failed to set atime/mtime");
 		retval = -1;
 	}
 	
@@ -553,16 +553,24 @@ int clone_attrs(struct file *src, char *dst)
 	
 void print_usage()
 {
-	/* prints some usage information										*/
+	/* prints copyright and usage information							*/
 	
+	printf("vcp  Copyright (C) 2009  lynix <lynix47@gmail.com>\n\n");
+	
+    printf("This program comes with ABSOLUTELY NO WARRANTY, use at\n");
+    printf("own risk. This is free software, and you are welcome to\n");
+    printf("redistribute it under under the terms of the GNU General\n");
+    printf("Public License as published by the Free Software\n");
+    printf("Foundation, either version 3 of the License, or (at your\n");
+    printf("option) any later version.\n\n");
+    
 	printf("Usage:	vcp [OPTIONS] [SOURCE(S)] [DESTINATION]\n\n");
-	printf("\t-c  check file(s) after transfer using MD5 sums\n");
 	printf("\t-d  delete originals (--> mv)\n");
 	printf("\t-f  overwrite existing files (default: ask)\n");
-	printf("\t-h  print usage information\n");
-	printf("\t-k  keep existing files (default: ask)\n");
+	printf("\t-h  print usage and license information\n");
+	printf("\t-k  skip existing files (default: ask)\n");
 	printf("\t-q  do not print progress information\n");
-	printf("\t-s  ensure each file is synched to disk after write\n");
+	printf("\t-s  ensure each file is synched to disk on completion\n");
 	printf("\t-v  be verbose\n");
 	printf("\t-D  print debugging messages\n");
 	

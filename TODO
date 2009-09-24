@@ -2,25 +2,14 @@ These are short notes for me, not intended to be clear for everyone.
 I will clean up all this when the project reaches a stable state.
 
 
- * add copyright information to usage
- 
  * -l switch that prints limits (filenum, sizes, etc.)
- 
  * fix that goddam hell of var-types (llong, ulong, double, etc.)
- 
  * progress output: respect terminal width
- 
  * signal handling (delete incomplete on interrupt)
- 
  * error messages: reduce, rewrite texts
- 
  * overflow protection for large vars (size, etc.)
- 
  * free space check?
- 
  * directory attributes: ignored?
- 
  * code BEAUTIFYing (should go along anyway)
- 
  * last but probably most important: DOCUMENTATION! (readme, proper
    homepage, github-wiki, etc.)
