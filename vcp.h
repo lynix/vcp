@@ -1,31 +1,20 @@
-/* TODO:	- -l switch that prints limits (filenum, sizes,...)
- * 			- fix that goddam hell of var-types (llong, ulong, double,...)
- * 			- progress: filesize, re-sort
- * 			- new progress format (like rsync):
- * 			  	/path/some/where/file.ext
- * 			  	File: [.......]		Total: [.......]
- * 			- code BEAUTIFYing (should go along anyway)
- * 			- signal handling (delete incomplete on interrupt)
- * 			- rewrite error messages (filenames, shortening)
- * 			- overflow protection for large vars (size, etc.)
- * 			- free space check?
- * 			- directory attributes: dropped?
- * 			- last: feature-list :-)
- * */
-
-/* FEATURES:
- * 			- no abort on failed file: tries its best to copy all the others,
- * 			  so you don't have to start the whole thing again just because
- * 			  one single file didn't ant to cooperate. prints a list of failed
- * 			  files after finishing its list. so after fixing the problem
- * 			  (encoding/whatever) you just start again with "-k" and you're done
+/* Copyright lynix <lynix47@gmail.com>, 2009
  * 
- * */
-
-/* LIMITS:
- * 			- only regular files and directories, no symlinks, nodes or sth.
- * 			- max. ??? files, max. filesize ??? Bytes, max. list size ??? Bytes
- * */
+ * This file is part of vcp (verbose cp).
+ *
+ * vcp is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * vcp is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with vcp.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <stdio.h>
 #include <time.h>

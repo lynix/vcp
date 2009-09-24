@@ -1,0 +1,15 @@
+README
+
+(construction in progress...)
+
+FEATURES:
+		- no abort on failed file: tries its best to copy all the others,
+		  so you don't have to start the whole thing again just because
+		  one single file didn't ant to cooperate. prints a list of failed
+		  files after finishing its list. so after fixing the problem
+		  (encoding/whatever) you just start again with "-k" and you're done
+
+
+LIMITS:
+		- only regular files and directories, no symlinks, nodes or sth.
+		- max. ??? files, max. filesize ??? Bytes, max. list size ??? Bytes
