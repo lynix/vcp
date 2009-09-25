@@ -5,6 +5,7 @@ I will clean up all this when the project reaches a stable state.
  * -l switch that prints limits (filenum, sizes, etc.)
  * fix that goddam hell of var-types (llong, ulong, double, etc.)
  * progress output: respect terminal width, redesign
+ * progress output: output for small files
  * signal handling (delete incomplete on interrupt)
  * error messages: reduce, rewrite texts
  * overflow protection for large vars (size, etc.)

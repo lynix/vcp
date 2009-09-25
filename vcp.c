@@ -35,12 +35,12 @@ int main(int argc, char *argv[])
 	init_opts();
 	
 	/* parse cmdline options */
-	if (argc < 3) {
-		print_error("insufficient arguments\n");
+	if ((argstart = parse_opts(argc, argv)) == -1) {
 		print_usage();
 		exit(EXIT_FAILURE);
 	}
-	if ((argstart = parse_opts(argc, argv)) == -1) {
+	if (argc < 3) {
+		print_error("insufficient arguments\n");
 		print_usage();
 		exit(EXIT_FAILURE);
 	}
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 	}
 	if (opts.verbose) {
 		/* print summary */
-		printf("Will now copy %lu files, %s\n", files->count, 
+		printf("Will now copy %lu file(s), %s\n", files->count, 
 				size_str(files->size));
 	}
 	if (opts.debug) {
@@ -602,7 +602,7 @@ int parse_opts(int argc, char *argv[])
     
     opterr = 0;
 	
-	while ((c = getopt(argc, argv, "dfhkqsv")) != -1) {
+	while ((c = getopt(argc, argv, "dfhkqslv")) != -1) {
 		switch (c) {
 			case 'f':
 				if (opts.keep == 0) {
@@ -631,6 +631,9 @@ int parse_opts(int argc, char *argv[])
 				break;
 			case 'h':
 				print_usage();
+				exit(EXIT_SUCCESS);
+			case 'l':
+				print_limits();
 				exit(EXIT_SUCCESS);
 			case 'v':
 				opts.verbose = 1;
@@ -763,3 +766,15 @@ int f_equal(struct file *a, struct file *b)
 	return 1;
 }
 	
+void print_limits()
+{
+	/* print size and count limits										*/
+	
+	printf("Limits (on this machine):\n\n");
+	printf(" - no. of files to copy   %ld\n", LONG_MAX);
+	printf(" - total size (Bytes)     %lld\n", LLONG_MAX);
+	printf(" - file size (Bytes)      %lld\n", LLONG_MAX);
+	printf(" - max. speed (Bytes/s)   %lu\n", ULONG_MAX);
+	
+	return;
+}

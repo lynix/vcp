@@ -13,3 +13,17 @@ FEATURES:
 LIMITS:
 		- only regular files and directories, no symlinks, nodes or sth.
 		- max. ??? files, max. filesize ??? Bytes, max. list size ??? Bytes
+
+
+		- Examples:
+		
+			- x86_64:
+				- no. of files to copy   9223372036854775807
+				- total size (Bytes)     9223372036854775807
+				- file size (Bytes)      9223372036854775807
+				- max. speed (Bytes/s)   18446744073709551615
+			- i686
+				- no. of files to copy   2147483647
+				- total size (Bytes)     9223372036854775807
+				- file size (Bytes)      9223372036854775807
+				- max. speed (Bytes/s)   4294967295

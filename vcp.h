@@ -59,6 +59,7 @@ void 	print_usage();
 void 	init_opts();
 void 	print_error(char *string, ...);
 void	print_debug(char *string, ...);
+void	print_limits();
 void 	progress(double t_perc, long num, long t_num, char *fname, 
 									  double perc, ulong bps, long eta);
 int 	copy_file(struct file *item, long filenum, long total_filenum, 
