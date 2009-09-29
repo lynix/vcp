@@ -1,0 +1,7 @@
+2009-09-29	added CHANGELOG to provide more detailed information than
+			the git-commit-summaries
+2009-09-25	added dynamic limits information, some cleanup
+2009-09-25	some fixes, added bugs to TODO
+2009-09-24	usage information, updated TODOs, added proper license
+			information, added git-ignores to keep binaries out
+2009-09-23	initial commit
