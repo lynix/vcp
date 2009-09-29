@@ -13,7 +13,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with vcp.  If not, see <http://www.gnu.org/licenses/>.
+ * along with vcp. If not, see <http://www.gnu.org/licenses/>.
  */
 
 /* includes */
@@ -28,8 +28,7 @@ int main(int argc, char *argv[])
 {
 	/* define local vars */
 	int argstart;
-	struct file *listp;
-	struct fileList *files;
+	struct flist *files;
 	
 	/* initialize */
 	init_opts();
@@ -61,11 +60,10 @@ int main(int argc, char *argv[])
 	}
 	if (opts.debug) {
 		/* print copy list */
-		fl_rewind(files);
-		while ((listp = fl_next(files)) != NULL) {
-			printf("%s --> %s\n", listp->src, listp->dst);
+		for (long i=0; i<files->count; i++) {
+			printf("%s --> %s\n", files->items[i]->src,
+				files->items[i]->dst);
 		}
-		fl_rewind(files);
 		fflush(stdout);
 	}
 	
@@ -80,9 +78,9 @@ int main(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
-struct fileList *build_list(int argc, int start, char *argv[])
+struct flist *build_list(int argc, int start, char *argv[])
 {
-	struct fileList *list;
+	struct flist *list;
 	struct file *f_dest;
 	char *item, *dest, *dest_dir, *dest_base;
 	
@@ -114,7 +112,7 @@ struct fileList *build_list(int argc, int start, char *argv[])
 	}
 	
 	/* create new list */
-	if ((list = fl_create()) == NULL) {
+	if ((list = flist_init()) == NULL) {
 		print_debug("failed to create file list");
 		return NULL;
 	}
@@ -140,48 +138,43 @@ struct fileList *build_list(int argc, int start, char *argv[])
 	return list;
 }
 
-int do_copy(struct fileList *files)
+int do_copy(struct flist *files)
 {
 	time_t start;
 	llong total_done;
 	unsigned int n;
 	int error;
+	struct strlist *failed;
 	struct file *item;
-	struct fileList *failed;
 		
-	/* select copy-mode (single/multi) */
-	if (files->count == 1) {
-		if ((item = fl_next(files)) == NULL) {
-			return -1;
-		}
-		/* copy a single item */
-		return copy_file(item, 1, 1, item->size, 0, time(NULL));
-	} else {
-		/* copy multiple items */
-		time(&start);
-		n=1;
-		total_done=0;
-		error=0;
-		failed = fl_create();
-		while ((item = fl_next(files)) != NULL) {
-			if (copy_file(item, n, files->count, files->size, 
-				total_done,	start) != 0) {
-				error = 1;
-				if (fl_add(failed, item) != 0) {
-					print_debug("failed to add to failed list\n");
-					return -1;
-				}
+	/* copy multiple items */
+	time(&start);
+	n=1;
+	total_done=0;
+	error=0;
+	if ((failed = strlist_init()) == NULL) {
+		return -1;
+	}
+	for (long i=0; i<files->count; i++) {
+		item = files->items[i];
+		if (copy_file(item, n, files->count, files->size, total_done,
+				start) != 0) {
+			error = 1;
+			if (strlist_add(failed, item->src) != 0) {
+				print_debug("failed to add to failed list\n");
+				return -1;
 			}
-			total_done += item->size;
-			n++;
 		}
-		if (error) {
-			printf("The following files could not be copied:\n");
-			while ((item = fl_next(failed)) != NULL) {
-				printf("   %s\n", item->src);
-			}
-			return -1;
+		total_done += item->size;
+		n++;
+	}
+	
+	if (error) {
+		print_error("The following files could not be copied:");
+		for (long i=0; i<failed->count; i++) {
+			printf("   %s\n", failed->items[i]);
 		}
+		return -1;
 	}
 	
 	return 0;
@@ -332,7 +325,7 @@ int copy_file(struct file *f_src, long num, long t_num,	llong t_size,
 	return 0;
 }
 
-int crawl_files(struct fileList *list, char *src, char *dest)
+int crawl_files(struct flist *list, char *src, char *dest)
 {
 	DIR *d_src;
 	struct dirent *dp_src;
@@ -426,7 +419,7 @@ int crawl_files(struct fileList *list, char *src, char *dest)
 		}
 		/* finally add file to copy list */
 		f_src->dst = dest;
-		if (fl_add(list, f_src) != 0) {
+		if (flist_add(list, f_src) != 0) {
 			print_debug("failed to add '%s' to copy list", src);
 			return -1;
 		}

@@ -13,7 +13,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with vcp.  If not, see <http://www.gnu.org/licenses/>.
+ * along with vcp. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>
@@ -32,7 +32,7 @@
 #include <openssl/md5.h>	/* MD5() */
 #include <errno.h>			/* errno, strerror() */
 
-#include "fileList.h"		/* my own humble implementation */
+#include "lists.h"			/* my list implementations */
 
 #define BUFFS 1048576		/* 1MiB buffer size for read() and write() */
 #define MAX_SIZE_L 30		/* maximum length of size string, numbers */
@@ -65,8 +65,8 @@ void 	progress(double t_perc, long num, long t_num, char *fname,
 int 	copy_file(struct file *item, long filenum, long total_filenum, 
 				llong total_size, llong total_done, time_t total_start);
 int 	parse_opts(int argc, char *argv[]);
-int 	crawl_files(struct fileList *list, char *item, char *dest);
-int 	do_copy(struct fileList *files);
+int 	crawl_files(struct flist *list, char *item, char *dest);
+int 	do_copy(struct flist *files);
 int 	clone_attrs(struct file *src, char *dst);
 int 	f_equal(struct file *a, struct file *b);
 char 	*strccat(char *a, char *b);
@@ -74,4 +74,4 @@ char 	*path_str(char *path, char *sub);
 char 	ask_overwrite(char *src, char *src_size, char *dst, char *dst_size);
 char 	*size_str(llong bytes);
 ulong 	speed(ulong spd);
-struct 	fileList *build_list(int argc, int start, char *argv[]);
+struct 	flist *build_list(int argc, int start, char *argv[]);
