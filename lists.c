@@ -45,8 +45,8 @@ int	flist_add(struct flist *list, struct file *item) {
 	
 	/* check fill state, expand if necessary (we grow with 2^x here) */
 	if (list->count == list->arr_size) {
-		if ((list->items = realloc(list->items, list->arr_size * 2L))
-				== NULL) {
+		if ((list->items = realloc(list->items, list->arr_size * 2L * 
+				sizeof(struct file *)))	== NULL) {
 			return -1;
 		}
 		list->arr_size *= 2L;
@@ -91,8 +91,8 @@ int	strlist_add(struct strlist *list, char *item) {
 	
 	/* check fill state, expand if necessary (we grow with 2^x here) */
 	if (list->count == list->arr_size) {
-		if ((list->items = realloc(list->items, list->arr_size * 2L))
-				== NULL) {
+		if ((list->items = realloc(list->items, list->arr_size * 2L * 
+				sizeof(char *))) == NULL) {
 			return -1;
 		}
 		list->arr_size *= 2L;

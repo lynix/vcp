@@ -18,7 +18,7 @@
 
 #include "file.h"
 
-#define LIST_START 5
+#define LIST_START 5L
 
 struct flist {
 	long	count;
