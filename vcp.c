@@ -16,14 +16,13 @@
  * along with vcp. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* includes */
 #include "vcp.h"
 
 /* globals */
-struct options opts;
-ulong speeds[SPEED_N];
+struct	options opts;
+ulong	speeds[SPEED_N];
 
-/* here we go */
+
 int main(int argc, char *argv[])
 {
 	/* define local vars */
@@ -260,16 +259,14 @@ int copy_file(struct file *f_src, long num, long t_num,	llong t_size,
 			t_done += bytes_w;
 		}
 		/* print beautiful progress information */
-		if (!opts.quiet && stats) {
-			if (time(NULL) > timer) {
-				time(&timer);
-				t_perc = (long double)t_done / t_size * 100;
-				perc = (long double)bytes_d / f_src->size * 100;
-				spd = speed(t_done / (time(NULL)-t_start));
-				eta = (t_size - t_done) / spd;	
-				progress(t_perc, num, t_num, f_src->filename, perc, spd,
-							eta);
-			}
+		if (!opts.quiet && stats && (time(NULL) > timer)) {
+			time(&timer);
+			t_perc = (long double)t_done / t_size * 100;
+			perc = (long double)bytes_d / f_src->size * 100;
+			spd = speed(t_done / (time(NULL)-t_start));
+			eta = (t_size - t_done) / spd;	
+			progress(t_perc, num, t_num, f_src->filename, perc, spd, 
+					eta);
 		}
 	}
 	/* complete progress information */
