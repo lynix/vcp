@@ -29,15 +29,15 @@
 #include <string.h>
 #include <limits.h>			/* realpath() */
 #include <stdlib.h>			/* realpath() */
-#include <openssl/md5.h>	/* MD5() */
 #include <errno.h>			/* errno, strerror() */
+#include <sys/ioctl.h>		/* ioctl(), get terminal width */
 
 #include "lists.h"			/* my list implementations */
 
-#define BUFFS 1048576		/* 1MiB buffer size for read() and write() */
+#define BUFFS 1048576		/* 1MiB buffer for read() and write() */
 #define MAX_SIZE_L 30		/* maximum length of size string, numbers */
 #define SPEED_N 5			/* speed middle calculation */
-#define FNAME_W 25			/* filename width in progress output */
+#define MIN_WIDTH 66		/* min. output width for progress */
 #define _POSIX_SOURCE		/* fsync() */
 
 struct options {
@@ -50,6 +50,10 @@ struct options {
 	int debug;
 };
 
+struct	options opts;
+ulong	speeds[SPEED_N];
+int		output_width;
+
 # if defined __STRICT_ANSI__
 	char 	*realpath (const char *, char *);
 	int 	fsync(int);
@@ -60,8 +64,8 @@ void 	init_opts();
 void 	print_error(char *string, ...);
 void	print_debug(char *string, ...);
 void	print_limits();
-void 	progress(double t_perc, long num, long t_num, char *fname, 
-									  double perc, ulong bps, long eta);
+void	progress(double t_perc, long num, long t_num, double perc,
+				ulong bps, long eta, llong fsize);
 int 	copy_file(struct file *item, long filenum, long total_filenum, 
 				llong total_size, llong total_done, time_t total_start);
 int 	parse_opts(int argc, char *argv[]);

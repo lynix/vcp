@@ -18,19 +18,20 @@
 
 #include "vcp.h"
 
-/* globals */
-struct	options opts;
-ulong	speeds[SPEED_N];
-
-
 int main(int argc, char *argv[])
 {
-	/* define local vars */
-	int argstart;
-	struct flist *files;
+	int 	argstart;
+	struct 	flist *files;
+    struct	winsize ws;
 	
-	/* initialize */
+	/* initialize options, get terminal width */
 	init_opts();
+    ioctl(0, TIOCGWINSZ, &ws);
+    if (ws.ws_col < MIN_WIDTH) {
+		output_width = MIN_WIDTH;
+	} else {
+		output_width = ws.ws_col;
+	}
 	
 	/* parse cmdline options */
 	if ((argstart = parse_opts(argc, argv)) == -1) {
@@ -235,6 +236,9 @@ int copy_file(struct file *f_src, long num, long t_num,	llong t_size,
 	bytes_w = 0;
 	error = 0;
 	time(&timer);
+
+	/* print filename */
+	printf("%-*s\n", output_width, f_src->src);
 	
 	/* the part you are looking for: do the actual copy */
 	while ((bytes_r = read(fd_src, buffer, buffsize))) {
@@ -264,18 +268,13 @@ int copy_file(struct file *f_src, long num, long t_num,	llong t_size,
 			t_perc = (long double)t_done / t_size * 100;
 			perc = (long double)bytes_d / f_src->size * 100;
 			spd = speed(t_done / (time(NULL)-t_start));
-			eta = (t_size - t_done) / spd;	
-			progress(t_perc, num, t_num, f_src->filename, perc, spd, 
-					eta);
+			eta = (t_size - t_done) / spd;
+			progress(t_perc, num, t_num, perc, spd,	eta, f_src->size);
 		}
 	}
-	/* complete progress information */
-	if (!opts.quiet) {
-		if (!stats) {
-			printf("%s copied\n", f_src->filename);
-		} else {
-			putchar('\n');
-		}
+	/* clear progress information line for next filename*/
+	if (!opts.quiet && stats) {
+		putchar('\r');
 	}
 	
 	/* fsync if requested */
@@ -425,11 +424,10 @@ int crawl_files(struct flist *list, char *src, char *dest)
 	return 0;
 }
 
-void progress(double t_perc, long num, long t_num, char *fname, 
-									double perc, ulong bps, long eta)
+void progress(double t_perc, long num, long t_num, double perc,
+				ulong bps, long eta, llong fsize)
 {
 	int eta_s, eta_m, eta_h;
-	char *filename;
 	
 	/* split ETA */
 	eta_s = eta % 60;
@@ -439,22 +437,13 @@ void progress(double t_perc, long num, long t_num, char *fname,
 		eta_h = 99;
 	}
 	
-	/* crop filename if necessary */
-	if (strlen(fname) > FNAME_W) {
-		filename = malloc(FNAME_W+1);
-		strncpy(filename, fname, FNAME_W-3);
-		filename[FNAME_W-3] = '\0';
-		fname = strccat(filename, "...");
-	}
-	
 	/* select style (single/multi) and finally print */
 	if (t_num > 1) {
-		printf("\r%3.0f%% %s/s ETA %02d:%02d:%02d | (%ld/%ld) %-*s @ %3.0f%%   ",
-				t_perc, size_str(bps), eta_h, eta_m, eta_s,	num, t_num,
-				FNAME_W, fname, perc);
+		printf("\rFile: %3.0f%% of %s | Total: %3.0f%% @ %s/s ETA %02d:%02d:%02d   ",
+				perc, size_str(fsize), t_perc, size_str(bps), eta_h, eta_m, eta_s);
 	} else {
-		printf("\r%3.0f%% %-*s @ %s/s ETA %02d:%02d:%02d  ", perc,
-				FNAME_W, fname, size_str(bps), eta_h, eta_m, eta_s);
+		printf("\r%3.0f%% of %s @ %s/s ETA %02d:%02d:%02d  ", perc,
+				size_str(fsize), size_str(bps), eta_h, eta_m, eta_s);
 	}
 	fflush(stdout);
 	
