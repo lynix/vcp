@@ -35,7 +35,6 @@ int main(int argc, char *argv[])
 	
 	/* parse cmdline options */
 	if ((argstart = parse_opts(argc, argv)) == -1) {
-		print_usage();
 		exit(EXIT_FAILURE);
 	}
 	if (argc < 3) {

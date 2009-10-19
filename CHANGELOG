@@ -1,3 +1,6 @@
+2009-10-20	fixed ignoring of -D, removed usage info on failed cmdline
+			parsing
+
 2009-10-06	Switched to rsync-like progress output style
 
 2009-09-29	Added CHANGELOG to provide more detailed information than
