@@ -581,7 +581,7 @@ int parse_opts(int argc, char *argv[])
     
     opterr = 0;
 	
-	while ((c = getopt(argc, argv, "dfhkqslv")) != -1) {
+	while ((c = getopt(argc, argv, "dfhkqslvD")) != -1) {
 		switch (c) {
 			case 'f':
 				if (opts.keep == 0) {

@@ -1,10 +1,13 @@
 These are short notes for me, not intended to be clear for everyone.
 I will clean up all this when the project reaches a stable state.
 
+ * fix transfer of large files on i686 ("value too large for specified type")
  * fix progress output left on successful termination
+ * fix directory deletion in case of -d
  * clean up copy_file()
  * attach reasons for fails to failed-file-list
  * fix that goddam hell of var-types (llong, ulong, double, etc.)
+ * add compile stamp to usage information
  * signal handling (delete incomplete on interrupt)
  * error messages: reduce, rewrite texts
  * overflow protection for large vars (size, etc.)
