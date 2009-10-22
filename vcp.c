@@ -746,13 +746,13 @@ int f_equal(struct file *a, struct file *b)
 	
 void print_limits()
 {
-	/* print size and count limits										*/
+	/* prints size and count limits										*/
 	
-	printf("Limits (on this machine):\n\n");
+	printf("Limits (on this architecture):\n\n");
 	printf(" - no. of files to copy   %ld\n", LONG_MAX);
-	printf(" - total size (Bytes)     %lld\n", LLONG_MAX);
-	printf(" - file size (Bytes)      %lld\n", LLONG_MAX);
-	printf(" - max. speed (Bytes/s)   %lu\n", ULONG_MAX);
+    printf(" - total size (Bytes)     %lld\n", LLONG_MAX);
+    printf(" - file size (Bytes)      %lld\n", LLONG_MAX);
+    printf(" - max. speed (Bytes/s)   %lu\n", ULONG_MAX);
 	
 	return;
 }

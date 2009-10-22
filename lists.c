@@ -37,7 +37,7 @@ struct flist *flist_init() {
 }
 
 int	flist_add(struct flist *list, struct file *item) {
-	long temp_s, temp_c;
+	llong temp_s, temp_c;
 	
 	if (list == NULL) {
 		return -1;
