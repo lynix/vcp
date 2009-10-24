@@ -16,6 +16,10 @@
  * along with vcp. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define __USE_LARGEFILE64
+#define _LARGEFILE_SOURCE
+#define _LARGEFILE64_SOURCE
+
 #include <stdlib.h>			/* realpath(), and others	*/
 #include <sys/stat.h>		/* file attributes			*/
 #include <libgen.h>			/* basename() 				*/
@@ -27,16 +31,14 @@
 #define S_IFREG	__S_IFREG	/* regular file				*/
 
 enum ftype { RFILE, RDIR };
-
-typedef long long 		llong;
-typedef unsigned long 	ulong;
+typedef unsigned long long ullong;
 
 struct file {
 	char	*filename;
 	char	*src;
 	char	*dst;
 	enum	ftype type;
-	llong	size;
+	ullong	size;
 	uid_t	uid;
 	gid_t	gid;
 	mode_t	mode;

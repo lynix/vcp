@@ -16,6 +16,8 @@
  * along with vcp. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _POSIX_SOURCE		/* fsync() */
+
 #include <stdio.h>
 #include <time.h>
 #include <fcntl.h>
@@ -27,18 +29,17 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <string.h>
-#include <limits.h>			/* realpath() */
-#include <stdlib.h>			/* realpath() */
-#include <errno.h>			/* errno, strerror() */
-#include <sys/ioctl.h>		/* ioctl(), get terminal width */
+#include <limits.h>			/* realpath() 								*/
+#include <stdlib.h>			/* realpath() 								*/
+#include <errno.h>			/* errno, strerror() 						*/
+#include <sys/ioctl.h>		/* ioctl(), get terminal width 				*/
 
-#include "lists.h"			/* my list implementations */
+#include "lists.h"			/* my list implementations 					*/
 
-#define BUFFS 1048576		/* 1MiB buffer for read() and write() */
-#define MAX_SIZE_L 30		/* maximum length of size string, numbers */
-#define SPEED_N 5			/* speed middle calculation */
-#define MIN_WIDTH 66		/* min. output width for progress */
-#define _POSIX_SOURCE		/* fsync() */
+#define BUFFS 1048576		/* 1MiB buffer for read() and write() 		*/
+#define MAX_SIZE_L 30		/* maximum length of size string, numbers 	*/
+#define SPEED_N 5			/* speed middle calculation 				*/
+#define MIN_WIDTH 66		/* min. output width for progress 			*/
 
 struct options {
 	int force;
@@ -64,10 +65,13 @@ void 	init_opts();
 void 	print_error(char *string, ...);
 void	print_debug(char *string, ...);
 void	print_limits();
-void	progress(double t_perc, long num, long t_num, double perc,
-				ulong bps, long eta, llong fsize);
-int 	copy_file(struct file *item, long filenum, long total_filenum, 
-				llong total_size, llong total_done, time_t total_start);
+void	progress(double t_perc, ulong t_num, double perc, ulong bps,
+				long eta, ullong fsize);
+void 	error_append(struct strlist *list, char *fname, char *error,
+					 char * reason);
+int 	copy_file(struct file *item, ulong total_filenum, 
+				 ullong total_size, ullong total_done, time_t total_start,
+				 struct strlist *failed);
 int 	parse_opts(int argc, char *argv[]);
 int 	crawl_files(struct flist *list, char *item, char *dest);
 int 	do_copy(struct flist *files);
@@ -76,6 +80,6 @@ int 	f_equal(struct file *a, struct file *b);
 char 	*strccat(char *a, char *b);
 char 	*path_str(char *path, char *sub);
 char 	ask_overwrite(char *src, char *src_size, char *dst, char *dst_size);
-char 	*size_str(llong bytes);
+char 	*size_str(ullong bytes);
 ulong 	speed(ulong spd);
 struct 	flist *build_list(int argc, int start, char *argv[]);

@@ -1,3 +1,11 @@
+2009-10-24	cleaned up the type-mess, fixed large files; new used types
+			are:
+
+				- speed & number of files:      unsigned long
+				- file size & total list size:  unsigned long long
+
+			Maximum file/list size therefore is now ~16.8TiB
+
 2009-10-20	fixed ignoring of -D, removed usage info on failed cmdline
 			parsing
 

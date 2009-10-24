@@ -21,7 +21,7 @@
 struct file *get_file(char *fname)
 {
 	struct file *new_item;
-	struct stat filestat;
+	struct stat64 filestat;
 	
 	/* check existance */
 	if (access(fname, F_OK) != 0) {
@@ -37,7 +37,7 @@ struct file *get_file(char *fname)
 	/* collect file properties */
 	new_item->src = fname;
 	new_item->filename = basename(fname);
-	if (stat(fname, &filestat) != 0) {
+	if (stat64(fname, &filestat) != 0) {
 		free(new_item);
 		return NULL;
 	}

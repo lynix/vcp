@@ -20,10 +20,12 @@
 
 #define LIST_START 5L
 
+typedef unsigned long ulong;
+
 struct flist {
-	long	count;
-	long	arr_size;
-	llong	size;
+	ulong	count;
+	ulong	arr_size;
+	ullong	size;
 	struct file **items;
 };
 
@@ -32,8 +34,8 @@ int		flist_add(struct flist *list, struct file *item);
 
 
 struct strlist {
-	long	count;
-	long 	arr_size;
+	ulong	count;
+	ulong 	arr_size;
 	char	**items;
 };
 

@@ -30,14 +30,15 @@ struct flist *flist_init() {
 		return NULL;
 	}
 	list->count = 0;
-	list->size = 0L;
+	list->size = 0;
 	list->arr_size = LIST_START;
 
 	return list;
 }
 
 int	flist_add(struct flist *list, struct file *item) {
-	llong temp_s, temp_c;
+	ulong  temp_c;
+	ullong temp_s;
 	
 	if (list == NULL) {
 		return -1;
@@ -54,12 +55,13 @@ int	flist_add(struct flist *list, struct file *item) {
 	
 	/* insert new item, update counters (with overflow check) */
 	list->items[list->count] = item;
-	temp_c = list->count++;
+	temp_c = list->count;
 	temp_s = list->size;
 	list->size += item->size;
-	if (list->count < temp_c || list->size < temp_s) {
-		list->count--;
-		list->size -= item->size;
+	list->count++;
+	if (list->count <= temp_c || list->size <= temp_s) {
+		list->count = temp_c;
+		list->size = temp_s;
 		return -1;
 	}
 	
@@ -83,7 +85,7 @@ struct strlist *strlist_init() {
 }
 
 int	strlist_add(struct strlist *list, char *item) {
-	long temp;
+	ulong temp;
 	
 	if (list == NULL) {
 		return -1;
@@ -101,7 +103,7 @@ int	strlist_add(struct strlist *list, char *item) {
 	/* insert new item, update counter (with overflow check) */
 	list->items[list->count] = item;
 	temp = list->count++;
-	if (list->count < temp) {
+	if (list->count <= temp) {
 		list->count--;
 		return -1;
 	}

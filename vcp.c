@@ -43,9 +43,11 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	
+	print_debug("output width is %d\n", output_width);
+
 	/* parse cmdline files, build list */
 	if (opts.verbose) {
-		printf("Collecting file information...\n");
+		printf("collecting file information...\n");
 		fflush(stdout);
 	}
 	if ((files = build_list(argc, argstart, argv)) == NULL) {
@@ -54,7 +56,7 @@ int main(int argc, char *argv[])
 	}
 	if (opts.verbose) {
 		/* print summary */
-		printf("Will now copy %lu file(s), %s\n", files->count, 
+		printf("will now copy %lu file(s), %s\n\n", files->count, 
 				size_str(files->size));
 	}
 	if (opts.debug) {
@@ -129,7 +131,7 @@ struct flist *build_list(int argc, int start, char *argv[])
 	
 	/* check if something left to copy at all */
 	if (list->count == 0) {
-		printf("No files to copy.\n");
+		printf("no files to copy.\n");
 		free(list);
 		exit(EXIT_SUCCESS);
 	}
@@ -139,38 +141,33 @@ struct flist *build_list(int argc, int start, char *argv[])
 
 int do_copy(struct flist *files)
 {
+	/* works off the file list and copies each file						*/
+	
 	time_t start;
-	llong total_done;
-	unsigned int n;
+	ullong total_done;
 	int error;
 	struct strlist *failed;
 	struct file *item;
-		
-	/* copy multiple items */
+	
 	time(&start);
-	n=1;
 	total_done=0;
 	error=0;
+	
 	if ((failed = strlist_init()) == NULL) {
 		return -1;
 	}
-	for (long i=0; i<files->count; i++) {
+	for (ulong i=0; i < files->count; i++) {
 		item = files->items[i];
-		if (copy_file(item, n, files->count, files->size, total_done,
-				start) != 0) {
+		if (copy_file(item, files->count, files->size, total_done,
+				start, failed) != 0) {
 			error = 1;
-			if (strlist_add(failed, item->src) != 0) {
-				print_debug("failed to add to failed list\n");
-				return -1;
-			}
 		}
 		total_done += item->size;
-		n++;
 	}
 	
 	if (error) {
-		print_error("The following files could not be copied:");
-		for (long i=0; i<failed->count; i++) {
+		print_error("\nthe following files could not be copied:");
+		for (ulong i=0; i < failed->count; i++) {
 			printf("   %s\n", failed->items[i]);
 		}
 		return -1;
@@ -179,23 +176,28 @@ int do_copy(struct flist *files)
 	return 0;
 }
 
-int copy_file(struct file *f_src, long num, long t_num,	llong t_size,
-											llong t_done, time_t t_start)
+int copy_file(struct file *f_src, ulong t_num, ullong t_size,
+			 ullong t_done, time_t t_start, struct strlist *failed)
 {
 	int 	fd_src, fd_dst, error, stats;
 	char 	*buffer, *dest;
-	long  eta;
-	llong 	buffsize, bytes_d, bytes_r, bytes_w;
-	struct file *f_dest;
+	long  	eta, buffsize, bytes_r, bytes_w;
+	ullong 	bytes_d;
+	struct 	file *f_dest;
 	double	t_perc, perc, spd;
-	time_t timer;
+	time_t 	timer;
+
+
+	/* IMPLEMENT ADDING TO FAILED LIST!!! */
+
 	
 	/* check if destination exists */
 	dest = f_src->dst;
 	if ((f_dest = get_file(dest)) != NULL) {
 		/* overwrite (remove and recreate), we know the user wants it */
 		if (remove(dest) != 0) {
-			print_error("unable to delete '%s': %s", dest, strerror(errno));
+			error_append(failed, f_src->src, "unable to delete existing destination",
+						strerror(errno));
 			return -1;
 		}
 		free(f_dest);
@@ -203,13 +205,15 @@ int copy_file(struct file *f_src, long num, long t_num,	llong t_size,
 	
 	/* open source (true, true ;) ) */
 	if ((fd_src = open(f_src->src, O_RDONLY)) == -1) {
-		print_error("unable to open '%s' for reading", f_src->src);
+		error_append(failed, f_src->src, "unable to open for reading",
+					strerror(errno));
 		return -1;
 	}
 	
 	/* open destination */
 	if ((fd_dst = open(dest, O_WRONLY|O_CREAT)) == -1) {
-		print_error("unable to open '%s' for writing", dest);
+		error_append(failed, dest, "unable to open for writing",
+					strerror(errno));
 		close(fd_src);
 		return -1;
 	}
@@ -223,7 +227,9 @@ int copy_file(struct file *f_src, long num, long t_num,	llong t_size,
 		stats = 1;
 	}
 	if ((buffer = malloc(buffsize)) == NULL) {
-		print_error("failed to allocate %s for buffer", size_str(buffsize));
+		print_error("failed to allocate %s for buffer",
+					size_str(buffsize));
+		error_append(failed, f_src->src, "failed allocating buffer", NULL);
 		close(fd_src);
 		close(fd_dst);
 		return -1;
@@ -243,7 +249,8 @@ int copy_file(struct file *f_src, long num, long t_num,	llong t_size,
 	while ((bytes_r = read(fd_src, buffer, buffsize))) {
 		/* read from source */
 		if (bytes_r == -1) {
-			print_error("I/O error while reading '%s': %s", f_src->src,
+			print_error("\rI/O error while reading: %s", strerror(errno));
+			error_append(failed, f_src->src, "I/O reading error",
 						strerror(errno));
 			error = 1;
 			break;
@@ -251,16 +258,23 @@ int copy_file(struct file *f_src, long num, long t_num,	llong t_size,
 		/* write to destination */
 		bytes_w = write(fd_dst, buffer, bytes_r);
 		if (bytes_w != bytes_r) {
-			print_error("I/O error while writing '%s': %s", dest,
+			print_error("\rI/O error writing to '%s': %s", dest,
+						strerror(errno));
+			error_append(failed, f_src->src, "I/O writing error",
 						strerror(errno));
 			error = 1;
 			break;
 		}
-		/* account written data */
-		if (error == 0) {
-			bytes_d += bytes_w;
-			t_done += bytes_w;
+
+		/* stop reading/writing on error */
+		if (error) {
+			break;
 		}
+		
+		/* account written data */
+		bytes_d += bytes_w;
+		t_done += bytes_w;
+			
 		/* print beautiful progress information */
 		if (!opts.quiet && stats && (time(NULL) > timer)) {
 			time(&timer);
@@ -268,50 +282,58 @@ int copy_file(struct file *f_src, long num, long t_num,	llong t_size,
 			perc = (long double)bytes_d / f_src->size * 100;
 			spd = speed(t_done / (time(NULL)-t_start));
 			eta = (t_size - t_done) / spd;
-			progress(t_perc, num, t_num, perc, spd,	eta, f_src->size);
+			progress(t_perc, t_num, perc, spd,	eta, f_src->size);
 		}
 	}
 	/* clear progress information line for next filename*/
 	if (!opts.quiet && stats) {
 		putchar('\r');
 	}
-	
-	/* fsync if requested */
-	if (opts.sync && (error == 0)) {
-		if (fsync(fd_dst) != 0) {
-			print_error("fsync failed for '%s': %s", dest, strerror(errno));
-			error=1;
+
+	if (!error) {
+		/* fsync if requested */
+		if (opts.sync) {
+			if (fsync(fd_dst) != 0) {
+				error_append(failed, dest, "fsync failed",
+							strerror(errno));
+				error=1;
+			}
 		}
+	
+		/* clone attributes */
+		if (clone_attrs(f_src, dest) != 0) {
+			error_append(failed, dest, "failed to apply attributes",
+						strerror(errno));
+			error = 1;
+		}
+
+		/* remove source if requested */
+		if (opts.delete && !error) {
+			if (remove(f_src->src) != 0) {
+				print_error("failed to remove '%s': %s", f_src->src,
+							strerror(errno));
+				error_append(failed, f_src->src, "failed removing file",
+							strerror(errno));
+				error = 1;
+			}
+		}
+	}
+	
+	/* remove failed transfers */
+	if ((bytes_d != f_src->size) || error) {
+		print_debug("transfer check negative, removing '%s'", dest);
+		if (remove(dest) != 0) {
+			error_append(failed, dest, "failed to remove broken destination",
+						strerror(errno));
+		}
+		error = 1;
 	}
 	
 	/* clean up */
 	free(buffer);
 	close(fd_src);
 	close(fd_dst);
-	
-	/* remove failed transfers */
-	if ((bytes_d != f_src->size) || error) {
-		print_error("transfer check negative, removing '%s'", dest);
-		if (remove(dest) != 0) {
-			print_error("failed to remove '%s': %s", dest, strerror(errno));
-		}
-		error = 1;
-	}
-	
-	/* clone attributes */
-	if (clone_attrs(f_src, dest) != 0) {
-		print_error("failed to apply file attributes to '%s'", dest);
-		error = 1;
-	}
-	
-	/* remove source if requested */
-	if (opts.delete && !error) {
-		if (remove(f_src->src) != 0) {
-			print_error("failed to remove '%s': %s", f_src->src,
-						strerror(errno));
-			error = 1;
-		}
-	}
+
 	
 	if (error) {
 		return -1;
@@ -322,6 +344,8 @@ int copy_file(struct file *f_src, long num, long t_num,	llong t_size,
 
 int crawl_files(struct flist *list, char *src, char *dest)
 {
+	/* recursively scan directory and adds files to transfer list		*/
+	
 	DIR *d_src;
 	struct dirent *dp_src;
 	struct file *f_src;
@@ -423,8 +447,8 @@ int crawl_files(struct flist *list, char *src, char *dest)
 	return 0;
 }
 
-void progress(double t_perc, long num, long t_num, double perc,
-				ulong bps, long eta, llong fsize)
+void progress(double t_perc, ulong t_num, double perc, ulong bps,
+			 long eta, ullong fsize)
 {
 	int eta_s, eta_m, eta_h;
 	
@@ -643,8 +667,12 @@ char *strccat(char *a, char *b)
 	char *retval;
 	int n,m;
 	
-	if (a == NULL || b == NULL) {
+	if (a == NULL && b == NULL) {
 		return NULL;
+	} else if (a == NULL) {
+		return b;
+	} else if (b == NULL) {
+		return a;
 	}
 	
 	n = strlen(a);
@@ -676,31 +704,31 @@ char *path_str(char *path, char *sub)
 	return retval;
 }
 
-char *size_str(llong bytes)
+char *size_str(ullong bytes)
 {
 	/* generates human readable size information; we stick to the 'new'	*
 	 * IEC standard, see http://en.wikipedia.org/wiki/Binary_prefix		*/
 	
 	char *retval, *unit, *buffer;
-	double number;
+	long double number;
 	
 	buffer = malloc(MAX_SIZE_L);
 	
 	if (bytes >= 1073741824) {
 		unit = "GiB";
-		number = (double)bytes / 1073741824;
+		number = (long double)bytes / 1073741824;
 	} else if (bytes >= 1048576) {
 		unit = "MiB";
-		number = (double)bytes / 1048576;
+		number = (long double)bytes / 1048576;
 	} else if (bytes >= 1024) {
 		unit = "KiB";
-		number = (double)bytes / 1024;
+		number = (long double)bytes / 1024;
 	} else {
 		unit = "B";
-		number = (double)bytes;
+		number = (long double)bytes;
 	}
 	
-	sprintf(buffer, "%.2f ", number);
+	sprintf(buffer, "%.2Le ", number);
 	retval = strccat(buffer, unit);
 	free(buffer);
 	
@@ -712,7 +740,7 @@ ulong speed(ulong spd)
 	/* takes new current speed, adds it to the global array and			*
 	 * calculates the arithmetic average								*/
 	
-	llong sum=0;
+	ullong sum=0;
 	
 	for (int i=0; i<SPEED_N-1; i++) {
 		speeds[i] = speeds[i+1];
@@ -743,16 +771,41 @@ int f_equal(struct file *a, struct file *b)
 	
 	return 1;
 }
+
+void error_append(struct strlist *list, char *fname, char *error,
+				 char *reason)
+{
+	char *errmsg;
+
+	errmsg = strccat(fname, ": ");
+	errmsg = strcat(errmsg, error);
+	if (reason != NULL) {
+		errmsg = strccat(errmsg, " (");
+		errmsg = strccat(errmsg, reason);
+		errmsg = strccat(errmsg, ")");
+	}
 	
+	if (strlist_add(list, errmsg) != 0) {
+		print_debug("failed to add to failed list:");
+		print_error(errmsg);
+	}
+
+	return;
+}
+
 void print_limits()
 {
-	/* prints size and count limits										*/
+	/* prints size, count and speed limits								*/
+	
+	ullong max_ull;
+	ulong  max_ulong;
+
+	max_ull = 0;
+	max_ulong = 0;
 	
 	printf("Limits (on this architecture):\n\n");
-	printf(" - no. of files to copy   %ld\n", LONG_MAX);
-    printf(" - total size (Bytes)     %lld\n", LLONG_MAX);
-    printf(" - file size (Bytes)      %lld\n", LLONG_MAX);
-    printf(" - max. speed (Bytes/s)   %lu\n", ULONG_MAX);
+	printf(" - max. filenum / max. speed    %lu Bytes/s\n", --max_ulong);
+    printf(" - max. total size / file size  %llu Bytes\n", --max_ull);
 	
 	return;
 }
