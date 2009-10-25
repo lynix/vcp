@@ -14,4 +14,4 @@ file.o : file.c
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean :
-	rm vcp *.o
+	rm vcp; rm *.o

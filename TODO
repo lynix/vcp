@@ -1,18 +1,12 @@
 These are short notes for me, not intended to be clear for everyone.
 I will clean up all this when the project reaches a stable state.
 
- * use stat64() instead of stat() to get file attributes (fixes bug 2)
  * fix progress output left on successful termination
  * fix directory deletion in case of -d
- * create new files with standard umask
- * clean up copy_file()
  * respect "preferred I/O blocksize" for each file from stat()?
- * attach reasons for fails to failed-file-list
- * fix that goddam hell of var-types (llong, ulong, double, etc.)
  * add compile stamp to usage information
  * signal handling (delete incomplete on interrupt)
  * error messages: reduce, rewrite texts
- * overflow protection for large vars (size, etc.)
  * free space check?
  * directory attributes: ignored?
  * code BEAUTIFYing (should go along anyway)
@@ -31,5 +25,3 @@ Known bugs:
 		malloc_chunk, fd_nextsize))+((2 * (sizeof(size_t))) - 1)) & 
 		~((2 * (sizeof(size_t))) - 1))) && ((old_top)->size & 0x1) && 
 		((unsigned long)old_end & pagemask) == 0)' failed.
-
-	* large files fail on i686

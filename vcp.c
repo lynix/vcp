@@ -22,16 +22,10 @@ int main(int argc, char *argv[])
 {
 	int 	argstart;
 	struct 	flist *files;
-    struct	winsize ws;
 	
-	/* initialize options, get terminal width */
+	/* initialize options, set umask 				*/
 	init_opts();
-    ioctl(0, TIOCGWINSZ, &ws);
-    if (ws.ws_col < MIN_WIDTH) {
-		output_width = MIN_WIDTH;
-	} else {
-		output_width = ws.ws_col;
-	}
+	umask(0);
 	
 	/* parse cmdline options */
 	if ((argstart = parse_opts(argc, argv)) == -1) {
@@ -42,8 +36,6 @@ int main(int argc, char *argv[])
 		print_usage();
 		exit(EXIT_FAILURE);
 	}
-	
-	print_debug("output width is %d\n", output_width);
 
 	/* parse cmdline files, build list */
 	if (opts.verbose) {
@@ -166,7 +158,7 @@ int do_copy(struct flist *files)
 	}
 	
 	if (error) {
-		print_error("\nthe following files could not be copied:");
+		print_error("the following files could not be copied:");
 		for (ulong i=0; i < failed->count; i++) {
 			printf("   %s\n", failed->items[i]);
 		}
@@ -179,17 +171,14 @@ int do_copy(struct flist *files)
 int copy_file(struct file *f_src, ulong t_num, ullong t_size,
 			 ullong t_done, time_t t_start, struct strlist *failed)
 {
-	int 	fd_src, fd_dst, error, stats;
+	int 	fd_src, fd_dst, error, stats, output_width;
 	char 	*buffer, *dest;
 	long  	eta, buffsize, bytes_r, bytes_w;
 	ullong 	bytes_d;
 	struct 	file *f_dest;
+	struct	winsize ws;
 	double	t_perc, perc, spd;
 	time_t 	timer;
-
-
-	/* IMPLEMENT ADDING TO FAILED LIST!!! */
-
 	
 	/* check if destination exists */
 	dest = f_src->dst;
@@ -211,7 +200,7 @@ int copy_file(struct file *f_src, ulong t_num, ullong t_size,
 	}
 	
 	/* open destination */
-	if ((fd_dst = open(dest, O_WRONLY|O_CREAT)) == -1) {
+	if ((fd_dst = open(dest, O_CREAT|O_EXCL|O_WRONLY, (mode_t)0600)) == -1) {
 		error_append(failed, dest, "unable to open for writing",
 					strerror(errno));
 		close(fd_src);
@@ -242,12 +231,19 @@ int copy_file(struct file *f_src, ulong t_num, ullong t_size,
 	error = 0;
 	time(&timer);
 
-	/* print filename */
-	printf("%-*s\n", output_width, f_src->src);
+	/* get terminal width */
+	ioctl(0, TIOCGWINSZ, &ws);
+    if (ws.ws_col < MIN_WIDTH) {
+		output_width = MIN_WIDTH;
+	} else {
+		output_width = ws.ws_col;
+	}
+
+	/* print source filename */
+	printf("%.*s\n", output_width, f_src->src);
 	
-	/* the part you are looking for: do the actual copy */
+	/* the part you are looking for: read from source... */
 	while ((bytes_r = read(fd_src, buffer, buffsize))) {
-		/* read from source */
 		if (bytes_r == -1) {
 			print_error("\rI/O error while reading: %s", strerror(errno));
 			error_append(failed, f_src->src, "I/O reading error",
@@ -255,25 +251,21 @@ int copy_file(struct file *f_src, ulong t_num, ullong t_size,
 			error = 1;
 			break;
 		}
-		/* write to destination */
+		/* ... and write to destination */
 		bytes_w = write(fd_dst, buffer, bytes_r);
 		if (bytes_w != bytes_r) {
 			print_error("\rI/O error writing to '%s': %s", dest,
 						strerror(errno));
+			printf("read: %ld, written: %ld, fd_dst: %d, fd_src: %d\n", bytes_r, bytes_w, fd_dst, fd_src);
 			error_append(failed, f_src->src, "I/O writing error",
 						strerror(errno));
 			error = 1;
 			break;
 		}
-
-		/* stop reading/writing on error */
-		if (error) {
-			break;
-		}
 		
 		/* account written data */
-		bytes_d += bytes_w;
-		t_done += bytes_w;
+		bytes_d += (ullong)bytes_w;
+		t_done += (ullong)bytes_w;
 			
 		/* print beautiful progress information */
 		if (!opts.quiet && stats && (time(NULL) > timer)) {
@@ -319,8 +311,8 @@ int copy_file(struct file *f_src, ulong t_num, ullong t_size,
 		}
 	}
 	
-	/* remove failed transfers */
-	if ((bytes_d != f_src->size) || error) {
+	/* remove incomplete transfers */
+	if (bytes_d != f_src->size) {
 		print_debug("transfer check negative, removing '%s'", dest);
 		if (remove(dest) != 0) {
 			error_append(failed, dest, "failed to remove broken destination",
@@ -710,25 +702,25 @@ char *size_str(ullong bytes)
 	 * IEC standard, see http://en.wikipedia.org/wiki/Binary_prefix		*/
 	
 	char *retval, *unit, *buffer;
-	long double number;
+	double number;
 	
 	buffer = malloc(MAX_SIZE_L);
 	
 	if (bytes >= 1073741824) {
 		unit = "GiB";
-		number = (long double)bytes / 1073741824;
+		number = (double)bytes / 1073741824;
 	} else if (bytes >= 1048576) {
 		unit = "MiB";
-		number = (long double)bytes / 1048576;
+		number = (double)bytes / 1048576;
 	} else if (bytes >= 1024) {
 		unit = "KiB";
-		number = (long double)bytes / 1024;
+		number = (double)bytes / 1024;
 	} else {
 		unit = "B";
-		number = (long double)bytes;
+		number = (double)bytes;
 	}
 	
-	sprintf(buffer, "%.2Le ", number);
+	sprintf(buffer, "%.2f ", number);
 	retval = strccat(buffer, unit);
 	free(buffer);
 	
@@ -778,7 +770,7 @@ void error_append(struct strlist *list, char *fname, char *error,
 	char *errmsg;
 
 	errmsg = strccat(fname, ": ");
-	errmsg = strcat(errmsg, error);
+	errmsg = strccat(errmsg, error);
 	if (reason != NULL) {
 		errmsg = strccat(errmsg, " (");
 		errmsg = strccat(errmsg, reason);

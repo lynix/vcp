@@ -53,7 +53,6 @@ struct options {
 
 struct	options opts;
 ulong	speeds[SPEED_N];
-int		output_width;
 
 # if defined __STRICT_ANSI__
 	char 	*realpath (const char *, char *);

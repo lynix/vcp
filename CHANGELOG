@@ -1,15 +1,19 @@
-2009-10-24	cleaned up the type-mess, fixed large files; new used types
-			are:
+2009-10-25	Fixed "bad file descriptor".
+			Fixed Makefile: clean binary AND object files.
 
+2009-10-24	Cleaned up the type-mess, fixed large files; new used types
+			are:
 				- speed & number of files:      unsigned long
 				- file size & total list size:  unsigned long long
 
-			Maximum file/list size therefore is now ~16.8TiB
+			Maximum file/list size therefore is now ~16.8TiB.
 
-2009-10-20	fixed ignoring of -D, removed usage info on failed cmdline
-			parsing
+			Fixed cutting to terminal width.
 
-2009-10-06	Switched to rsync-like progress output style
+2009-10-20	Fixed ignoring of -D, removed usage info on failed cmdline
+			parsing.
+
+2009-10-06	Switched to rsync-like progress output style.
 
 2009-09-29	Added CHANGELOG to provide more detailed information than
 			the git-commit-summaries.
