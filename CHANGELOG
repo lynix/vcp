@@ -1,3 +1,5 @@
+2009-10-27	Removed cutting filenames to terminal width.
+
 2009-10-25	Fixed "bad file descriptor".
 			Fixed Makefile: clean binary AND object files.
 

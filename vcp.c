@@ -140,6 +140,7 @@ int do_copy(struct flist *files)
 	int error;
 	struct strlist *failed;
 	struct file *item;
+	struct winsize ws;
 	
 	time(&start);
 	total_done=0;
@@ -157,6 +158,14 @@ int do_copy(struct flist *files)
 		total_done += item->size;
 	}
 	
+	/* clear progress line */
+	ioctl(0, TIOCGWINSZ, &ws);
+	for (int n=0; n < ws.ws_col; n++) {
+		putchar(' ');
+	}
+	putchar('\r');
+
+	/* print list of failed items */
 	if (error) {
 		print_error("the following files could not be copied:");
 		for (ulong i=0; i < failed->count; i++) {
@@ -171,12 +180,11 @@ int do_copy(struct flist *files)
 int copy_file(struct file *f_src, ulong t_num, ullong t_size,
 			 ullong t_done, time_t t_start, struct strlist *failed)
 {
-	int 	fd_src, fd_dst, error, stats, output_width;
+	int 	fd_src, fd_dst, error, stats;
 	char 	*buffer, *dest;
 	long  	eta, buffsize, bytes_r, bytes_w;
 	ullong 	bytes_d;
 	struct 	file *f_dest;
-	struct	winsize ws;
 	double	t_perc, perc, spd;
 	time_t 	timer;
 	
@@ -231,16 +239,8 @@ int copy_file(struct file *f_src, ulong t_num, ullong t_size,
 	error = 0;
 	time(&timer);
 
-	/* get terminal width */
-	ioctl(0, TIOCGWINSZ, &ws);
-    if (ws.ws_col < MIN_WIDTH) {
-		output_width = MIN_WIDTH;
-	} else {
-		output_width = ws.ws_col;
-	}
-
 	/* print source filename */
-	printf("%.*s\n", output_width, f_src->src);
+	printf("%s\n", f_src->src);
 	
 	/* the part you are looking for: read from source... */
 	while ((bytes_r = read(fd_src, buffer, buffsize))) {
