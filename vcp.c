@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 		print_error("insufficient arguments.\nTry -h for help.");
 		exit(EXIT_FAILURE);
 	}
-
+	
 	/* parse cmdline files, build list */
 	if (opts.verbose) {
 		printf("collecting file information...\n");
@@ -143,7 +143,6 @@ int do_copy()
 	int error;
 	struct strlist *failed;
 	struct file *item;
-	struct winsize ws;
 	
 	time(&start);
 	total_done=0;
@@ -162,14 +161,7 @@ int do_copy()
 		}
 		total_done += item->size;
 	}
-
-	/* clear progress line */
-	ioctl(0, TIOCGWINSZ, &ws);
-	for (int n=0; n < ws.ws_col; n++) {
-		putchar(' ');
-	}
-	putchar('\r');
-
+	
 	/* reverse-iterate through directories and set times, evtl. delete 	*/
 	if (!error && dir_list->count > 0) {
 		for (ulong i = (dir_list->count)-1; i >= 0; i--) {
@@ -212,6 +204,7 @@ int copy_file(struct file *f_src, ulong t_num, ullong t_size,
 	long  	eta, buffsize, bytes_r, bytes_w;
 	ullong 	bytes_d;
 	struct 	file *f_dest;
+	struct	winsize ws;
 	double	t_perc, perc, spd;
 	time_t 	timer;
 	
@@ -306,6 +299,11 @@ int copy_file(struct file *f_src, ulong t_num, ullong t_size,
 	}
 	/* clear progress information line for next filename*/
 	if (!opts.quiet && stats) {
+		putchar('\r');
+		ioctl(0, TIOCGWINSZ, &ws);
+		for (int n=0; n < ws.ws_col; n++) {
+			putchar(' ');
+		}
 		putchar('\r');
 	}
 
@@ -503,11 +501,21 @@ void progress(double t_perc, ulong t_num, double perc, ulong bps,
 	
 	/* select style (single/multi) and finally print */
 	if (t_num > 1) {
-		printf("\rFile: %3.0f%% of %s | Total: %3.0f%% @ %s/s ETA %02d:%02d:%02d   ",
+		if (opts.bars) {
+			printf("\rFile: %3.0f%% %s   Total: %3.0f%% %s  ETA %02d:%02d:%02d   ",
+				perc, prog_bar(perc), t_perc, prog_bar(t_perc), eta_h, eta_m, eta_s);
+		} else {
+			printf("\rFile: %3.0f%% of %s | Total: %3.0f%% @ %s/s ETA %02d:%02d:%02d   ",
 				perc, size_str(fsize), t_perc, size_str(bps), eta_h, eta_m, eta_s);
+		}
 	} else {
-		printf("\r%3.0f%% of %s @ %s/s ETA %02d:%02d:%02d  ", perc,
+		if (opts.bars) {
+			printf("\r%3.0f%%  %s  ETA %02d:%02d:%02d  ", perc, prog_bar(perc),
+				eta_h, eta_m, eta_s);
+		} else {
+			printf("\r%3.0f%% of %s @ %s/s ETA %02d:%02d:%02d   ", perc,
 				size_str(fsize), size_str(bps), eta_h, eta_m, eta_s);
+		}
 	}
 	fflush(stdout);
 	
@@ -609,6 +617,7 @@ void print_usage()
     printf("option) any later version.\n\n");
     
 	printf("Usage:	vcp [OPTIONS] [SOURCE(S)] [DESTINATION]\n\n");
+	printf("  -b  display progress bars instead of text\n");
 	printf("  -d  delete source(s) on success\n");
 	printf("  -f  overwrite existing files (default: ask)\n");
 	printf("  -h  print usage and license information\n");
@@ -629,6 +638,7 @@ void init_opts()
 {
 	/* initializes the global options structure							*/
 	
+	opts.bars = 0;
 	opts.force = 0;
 	opts.sync = 0;
 	opts.delete = 0;
@@ -650,8 +660,11 @@ int parse_opts(int argc, char *argv[])
     
     opterr = 0;
 	
-	while ((c = getopt(argc, argv, "dfhkqsluvD")) != -1) {
+	while ((c = getopt(argc, argv, "bdfhkqsluvD")) != -1) {
 		switch (c) {
+			case 'b':
+				opts.bars = 1;
+				break;
 			case 'f':
 				if (opts.keep == 0) {
 					opts.force = 1;
@@ -843,6 +856,38 @@ void error_append(struct strlist *list, char *fname, char *error,
 	return;
 }
 
+char *prog_bar(double percent)
+{
+	/* returns a progress bar as string									*/
+
+	#define BAR_STEP 100.0/(BAR_WIDTH-2)
+
+	char *retval;
+	double temp;
+	short i;
+
+	if ((retval = malloc(BAR_WIDTH+1)) == NULL) {
+		return NULL;
+	}
+	retval[0] = '[';
+	retval[BAR_WIDTH-1] = ']';
+	retval[BAR_WIDTH] = '\0';
+
+	i = 1;
+	temp = BAR_STEP;
+	while ((temp <= percent) && (i < BAR_WIDTH-1)) {
+		retval[i] = '#';
+		i++;
+		temp += BAR_STEP;
+	}
+	while (i < BAR_WIDTH-1) {
+		retval[i] = '-';
+		i++;
+	}
+
+	return retval;
+}
+
 void print_limits()
 {
 	/* prints size, count and speed limits								*/
@@ -854,8 +899,9 @@ void print_limits()
 	max_ulong = 0;
 	
 	printf("Limits (on this architecture):\n\n");
-	printf(" - max. filenum / max. speed    %lu Bytes/s\n", --max_ulong);
-    printf(" - max. total size / file size  %llu Bytes\n", --max_ull);
+	printf(" - number of files         %lu\n", --max_ulong);
+	printf(" - speed                   %s/s\n", size_str(max_ulong));
+    printf(" - total size / file size  %s\n", size_str(--max_ull));
 	
 	return;
 }

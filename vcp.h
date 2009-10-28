@@ -39,9 +39,10 @@
 #define BUFFS 1048576		/* 1MiB buffer for read() and write() 		*/
 #define MAX_SIZE_L 30		/* maximum length of size string, numbers 	*/
 #define SPEED_N 5			/* speed middle calculation 				*/
-#define MIN_WIDTH 66		/* min. output width for progress 			*/
+#define BAR_WIDTH 20		/* progress bar width (characters) 			*/
 
 struct options {
+	int bars;
 	int force;
 	int sync;
 	int delete;
@@ -84,5 +85,6 @@ char 	*strccat(char *a, char *b);
 char 	*path_str(char *path, char *sub);
 char 	ask_overwrite(char *src, char *src_size, char *dst, char *dst_size);
 char 	*size_str(ullong bytes);
+char	*prog_bar(double percent);
 ulong 	speed(ulong spd);
 

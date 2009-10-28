@@ -2,24 +2,12 @@ These are short notes for me, not intended to be clear for everyone.
 I will clean up all this when the project reaches a stable state.
 
  * symlinks
- * respect "preferred I/O blocksize" for each file from stat()?
  * signal handling (delete incomplete on interrupt)
- * error messages: reduce, rewrite texts
- * add graphical progress indicator (aka progress bar)
  * free space check?
- * code BEAUTIFYing (should go along anyway)
  * last but probably most important: DOCUMENTATION! (readme, proper
    homepage, github-wiki, etc.)
 
 
 Known bugs:
 
-	* on a i686 machine with only some mb left of free memory:
-	
-		vcp: malloc.c:3074: sYSMALLOc: Assertion `(old_top == (((mbinptr)
-		(((char *) &((av)->bins[((1) - 1) * 2])) - __builtin_offsetof
-		(struct malloc_chunk, fd)))) && old_size == 0) || ((unsigned long)
-		(old_size) >= (unsigned long)((((__builtin_offsetof(struct
-		malloc_chunk, fd_nextsize))+((2 * (sizeof(size_t))) - 1)) & 
-		~((2 * (sizeof(size_t))) - 1))) && ((old_top)->size & 0x1) && 
-		((unsigned long)old_end & pagemask) == 0)' failed.
+	(currently none)

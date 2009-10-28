@@ -2,6 +2,7 @@
 			Added -u policy for existing files: keep existing files if
 			they match in size, owner and times; overwrite changed ones.
 			Added compile timestamp to usage information.
+			Added graphical progress indicator (progress bar).
 
 2009-10-27	Removed cutting filenames to terminal width.
 			Added attribute-cloning for directories, too.
