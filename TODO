@@ -1,14 +1,12 @@
 These are short notes for me, not intended to be clear for everyone.
 I will clean up all this when the project reaches a stable state.
 
- * fix directory deletion in case of -d
+ * symlinks
  * respect "preferred I/O blocksize" for each file from stat()?
- * add compile stamp to usage information
  * signal handling (delete incomplete on interrupt)
  * error messages: reduce, rewrite texts
  * add graphical progress indicator (aka progress bar)
  * free space check?
- * directory attributes: ignored?
  * code BEAUTIFYing (should go along anyway)
  * last but probably most important: DOCUMENTATION! (readme, proper
    homepage, github-wiki, etc.)

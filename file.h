@@ -20,15 +20,15 @@
 #define _LARGEFILE_SOURCE
 #define _LARGEFILE64_SOURCE
 
-#include <stdlib.h>			/* realpath(), and others	*/
-#include <sys/stat.h>		/* file attributes			*/
-#include <libgen.h>			/* basename() 				*/
-#include <sys/types.h>		/* uid_t, gid_t, etc		*/
-#include <utime.h>			/* struct utimbuf			*/
-#include <unistd.h>			/* F_OK						*/
+#include <stdlib.h>						/* realpath(), and others	*/
+#include <sys/stat.h>					/* file attributes			*/
+#include <libgen.h>						/* basename() 				*/
+#include <sys/types.h>					/* uid_t, gid_t, etc		*/
+#include <utime.h>						/* struct utimbuf			*/
+#include <unistd.h>						/* F_OK						*/
 
-#define S_IFDIR __S_IFDIR	/* regular directory		*/
-#define S_IFREG	__S_IFREG	/* regular file				*/
+#define S_IFDIR __S_IFDIR				/* regular directory		*/
+#define S_IFREG	__S_IFREG				/* regular file				*/
 
 enum ftype { RFILE, RDIR };
 typedef unsigned long long ullong;

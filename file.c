@@ -52,7 +52,7 @@ struct file *get_file(char *fname)
 		new_item->type = RFILE;
 		new_item->size = filestat.st_size;
 	} else if (filestat.st_mode & S_IFDIR) {
-		/* directory -> set zero-size, important for do_copy() */
+		/* directory -> set zero-size */
 		new_item->type = RDIR;
 		new_item->size = 0;
 	} else {

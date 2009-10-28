@@ -21,9 +21,8 @@
 int main(int argc, char *argv[])
 {
 	int 	argstart;
-	struct 	flist *files;
 	
-	/* initialize options, set umask 				*/
+	/* initialize options, set umask */
 	init_opts();
 	umask(0);
 	
@@ -32,8 +31,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	if (argc < 3) {
-		print_error("insufficient arguments\n");
-		print_usage();
+		print_error("insufficient arguments.\nTry -h for help.");
 		exit(EXIT_FAILURE);
 	}
 
@@ -42,38 +40,37 @@ int main(int argc, char *argv[])
 		printf("collecting file information...\n");
 		fflush(stdout);
 	}
-	if ((files = build_list(argc, argstart, argv)) == NULL) {
+	if (build_list(argc, argstart, argv) != 0) {
 		print_error("failed to build file list, aborting.");
 		exit(EXIT_FAILURE);
 	}
 	if (opts.verbose) {
 		/* print summary */
-		printf("will now copy %lu file(s), %s\n\n", files->count, 
-				size_str(files->size));
+		printf("will now copy %lu file(s), %s\n\n", file_list->count, 
+				size_str(file_list->size));
 	}
 	if (opts.debug) {
 		/* print copy list */
-		for (long i=0; i<files->count; i++) {
-			printf("%s --> %s\n", files->items[i]->src,
-				files->items[i]->dst);
+		for (long i=0; i<file_list->count; i++) {
+			printf("%s --> %s\n", file_list->items[i]->src,
+				file_list->items[i]->dst);
 		}
 		fflush(stdout);
 	}
 	
 	/* do the actual copy */
-	if (do_copy(files) != 0) {
+	if (do_copy() != 0) {
 		print_error("copying failed");
-		free(files);
+		free(file_list);
 		exit(EXIT_FAILURE);
 	}
-	free(files);
+	free(file_list);
 	
 	exit(EXIT_SUCCESS);
 }
 
-struct flist *build_list(int argc, int start, char *argv[])
+int build_list(int argc, int start, char *argv[])
 {
-	struct flist *list;
 	struct file *f_dest;
 	char *item, *dest, *dest_dir, *dest_base;
 	
@@ -92,7 +89,7 @@ struct flist *build_list(int argc, int start, char *argv[])
 		if (f_dest->type == RFILE) {
 			if ((argc-start-1) != 1) {
 				print_error("unable to copy multiple items to one file");
-				return NULL;
+				return -1;
 			}
 		}
 		free(f_dest);
@@ -100,40 +97,46 @@ struct flist *build_list(int argc, int start, char *argv[])
 		if ((argc-start-1) > 1) {
 			print_error("destination directory '%s' does not exist", 
 						argv[argc-1]);
-			return NULL;
+			return -1;
 		}
 	}
 	
-	/* create new list */
-	if ((list = flist_init()) == NULL) {
+	/* create new lists */
+	if ((file_list = flist_init()) == NULL) {
 		print_debug("failed to create file list");
-		return NULL;
+		return -1;
+	}
+	if ((dir_list = flist_init()) == NULL) {
+		print_debug("failed to create dir list");
+		return -1;
 	}
 	
-	/* iterate through cmdline and insert files */
+	/* iterate through cmdline and insert items */
 	for (int i=start; i<(argc-1); i++) {
 		/* clean item path */
 		item = realpath(argv[i], NULL);
 		/* crawl item */
-		if (crawl_files(list, item, dest) != 0) {
-			free(list);
-			return NULL;
+		if (crawl_files(item, dest) != 0) {
+			free(file_list);
+			free(dir_list);
+			return -1;
 		}
 	}
 	
 	/* check if something left to copy at all */
-	if (list->count == 0) {
-		printf("no files to copy.\n");
-		free(list);
+	if (file_list->count == 0 && dir_list->count == 0) {
+		printf("no items to copy.\n");
+		free(file_list);
+		free(dir_list);
 		exit(EXIT_SUCCESS);
 	}
 	
-	return list;
+	return 0;
 }
 
-int do_copy(struct flist *files)
+int do_copy()
 {
-	/* works off the file list and copies each file						*/
+	/* works off the file lists and copies each item					*/
 	
 	time_t start;
 	ullong total_done;
@@ -149,15 +152,17 @@ int do_copy(struct flist *files)
 	if ((failed = strlist_init()) == NULL) {
 		return -1;
 	}
-	for (ulong i=0; i < files->count; i++) {
-		item = files->items[i];
-		if (copy_file(item, files->count, files->size, total_done,
-				start, failed) != 0) {
+
+	/* copy files */
+	for (ulong i=0; i < file_list->count; i++) {
+		item = file_list->items[i];
+		if (copy_file(item, file_list->count, file_list->size,
+				total_done,	start, failed) != 0) {
 			error = 1;
 		}
 		total_done += item->size;
 	}
-	
+
 	/* clear progress line */
 	ioctl(0, TIOCGWINSZ, &ws);
 	for (int n=0; n < ws.ws_col; n++) {
@@ -165,9 +170,31 @@ int do_copy(struct flist *files)
 	}
 	putchar('\r');
 
+	/* reverse-iterate through directories and set times, evtl. delete 	*/
+	if (!error && dir_list->count > 0) {
+		for (ulong i = (dir_list->count)-1; i >= 0; i--) {
+			if (clone_attrs(dir_list->items[i]) != 0) {
+				error = 1;
+				error_append(failed, dir_list->items[i]->src,
+				"unable to apply directory attributes", strerror(errno));
+			} else {
+				if (opts.delete) {
+					if (rmdir(dir_list->items[i]->src) != 0) {
+						error = 1;
+						error_append(failed, dir_list->items[i]->src,
+						 "unable to delete directory", strerror(errno));
+					}
+				}
+			}
+			if (i == 0) {
+				break;
+			}
+		}
+	}
+	
 	/* print list of failed items */
 	if (error) {
-		print_error("the following files could not be copied:");
+		print_error("the following errors occured:");
 		for (ulong i=0; i < failed->count; i++) {
 			printf("   %s\n", failed->items[i]);
 		}
@@ -293,7 +320,7 @@ int copy_file(struct file *f_src, ulong t_num, ullong t_size,
 		}
 	
 		/* clone attributes */
-		if (clone_attrs(f_src, dest) != 0) {
+		if (clone_attrs(f_src) != 0) {
 			error_append(failed, dest, "failed to apply attributes",
 						strerror(errno));
 			error = 1;
@@ -334,7 +361,7 @@ int copy_file(struct file *f_src, ulong t_num, ullong t_size,
 	return 0;
 }
 
-int crawl_files(struct flist *list, char *src, char *dest)
+int crawl_files(char *src, char *dest)
 {
 	/* recursively scan directory and adds files to transfer list		*/
 	
@@ -372,13 +399,25 @@ int crawl_files(struct flist *list, char *src, char *dest)
 				print_error("failed to create directory '%s': %s", dest,
 							strerror(errno));
 				return -1;
+			} else {
+				f_src->dst = dest;
+				if (flist_add(dir_list, f_src) != 0) {
+					print_debug("failed to add '%s' to dir list", src);
+					return -1;
+				}
 			}
 		} else {
+			/* destinatio exists, check type */
 			if (f_dest->type == RFILE) {
 				print_error("unable to copy dir '%s' over file '%s'", src,
 							dest);
 				free(f_src);
 				free(f_dest);
+				return -1;
+			}
+			f_src->dst = dest;
+			if (flist_add(dir_list, f_src) != 0) {
+				print_debug("failed to add '%s' to dir list", src);
 				return -1;
 			}
 		}
@@ -395,7 +434,7 @@ int crawl_files(struct flist *list, char *src, char *dest)
 				continue;
 			}
 			/* recursively crawl directory contents */
-			if (crawl_files(list, path_str(src, dp_src->d_name), dest) 
+			if (crawl_files(path_str(src, dp_src->d_name), dest) 
 					!= 0) {
 				return -1;
 			}
@@ -418,8 +457,18 @@ int crawl_files(struct flist *list, char *src, char *dest)
 				}
 				/* decide whether to skip/overwrite */
 				if (!opts.force) {
-					if (opts.keep && f_equal(f_src, f_dest)) {
+					if (opts.keep) {
 						return 0;
+					} else if (opts.update) {
+						if (f_equal(f_src, f_dest)) {
+							if (opts.delete) {
+								if (remove(f_src->src) != 0) {
+									print_error("unable to delete '%s': %s\n",
+										f_src->src, strerror(errno));
+								}
+							}
+							return 0;
+						}
 					} else if (ask_overwrite(f_src->filename, size_str(
 								f_src->size), f_dest->filename, size_str(
 								f_dest->size)) == 'n') {
@@ -428,10 +477,10 @@ int crawl_files(struct flist *list, char *src, char *dest)
 				}
 			}
 		}
-		/* finally add file to copy list */
+		/* finally add file to file list */
 		f_src->dst = dest;
-		if (flist_add(list, f_src) != 0) {
-			print_debug("failed to add '%s' to copy list", src);
+		if (flist_add(file_list, f_src) != 0) {
+			print_debug("failed to add '%s' to file list", src);
 			return -1;
 		}
 	}
@@ -521,24 +570,24 @@ char ask_overwrite(char *old, char *old_size, char *new, char *new_size)
 	return answer;
 }
 
-int clone_attrs(struct file *src, char *dst)
+int clone_attrs(struct file *src)
 {
 	/* applies the attributes of a given file to another				*/
 	
 	int retval=0;
 	
 	/* set owner uid/gid */
-	if (chown(dst, src->uid, src->gid) != 0) {
+	if (chown(src->dst, src->uid, src->gid) != 0) {
 		print_debug("failed to set uid/gid");
 		retval = -1;
 	}
 	/* set mode */
-	if (chmod(dst, src->mode) != 0) {
+	if (chmod(src->dst, src->mode) != 0) {
 		print_debug("failed to set mode");
 		retval = -1;
 	}
 	/* set atime/mtime */
-	if (utime(dst, &(src->times)) != 0) {
+	if (utime(src->dst, &(src->times)) != 0) {
 		print_debug("failed to set atime/mtime");
 		retval = -1;
 	}
@@ -563,11 +612,15 @@ void print_usage()
 	printf("  -d  delete source(s) on success\n");
 	printf("  -f  overwrite existing files (default: ask)\n");
 	printf("  -h  print usage and license information\n");
-	printf("  -k  skip existing files (default: ask)\n");
+	printf("  -k  skip all existing files (default: ask)\n");
 	printf("  -q  do not print progress information\n");
 	printf("  -s  ensure each file is synched to disk on completion\n");
+	printf("  -u  skip identical existing files, update changed ones\n");
 	printf("  -v  be verbose\n");
-	printf("  -D  print debugging messages\n");
+	printf("  -D  print debugging messages\n\n");
+	
+	printf("This version of vcp was built on %s %s.\n", __DATE__,
+			__TIME__);
 	
 	return;
 }
@@ -582,6 +635,7 @@ void init_opts()
 	opts.keep = 0;
 	opts.quiet = 0;
 	opts.verbose = 0;
+	opts.update = 0;
 	opts.debug = 0;
 
 	return;
@@ -596,7 +650,7 @@ int parse_opts(int argc, char *argv[])
     
     opterr = 0;
 	
-	while ((c = getopt(argc, argv, "dfhkqslvD")) != -1) {
+	while ((c = getopt(argc, argv, "dfhkqsluvD")) != -1) {
 		switch (c) {
 			case 'f':
 				if (opts.keep == 0) {
@@ -629,6 +683,9 @@ int parse_opts(int argc, char *argv[])
 			case 'l':
 				print_limits();
 				exit(EXIT_SUCCESS);
+			case 'u':
+				opts.update = 1;
+				break;
 			case 'v':
 				opts.verbose = 1;
 				break;
@@ -637,9 +694,10 @@ int parse_opts(int argc, char *argv[])
 				break;
 			case '?':
 				if (isprint(optopt)) {
-					print_error("unknown option \"-%c\"\n", optopt);
+					print_error("unknown option \"-%c\".\nTry -h for help.",
+								optopt);
 				} else {
-					print_error("unknown option character \"\\x%x\"\n",
+					print_error("unknown option character \"\\x%x\".\nTry -h for help.",
 								optopt);
 				}
 				return -1;

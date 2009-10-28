@@ -47,11 +47,14 @@ struct options {
 	int delete;
 	int keep;
 	int quiet;
+	int update;
 	int verbose;
 	int debug;
 };
 
 struct	options opts;
+struct	flist *file_list;
+struct	flist *dir_list;
 ulong	speeds[SPEED_N];
 
 # if defined __STRICT_ANSI__
@@ -68,17 +71,18 @@ void	progress(double t_perc, ulong t_num, double perc, ulong bps,
 				long eta, ullong fsize);
 void 	error_append(struct strlist *list, char *fname, char *error,
 					 char * reason);
+int		build_list(int argc, int start, char *argv[]);
 int 	copy_file(struct file *item, ulong total_filenum, 
 				 ullong total_size, ullong total_done, time_t total_start,
 				 struct strlist *failed);
 int 	parse_opts(int argc, char *argv[]);
-int 	crawl_files(struct flist *list, char *item, char *dest);
-int 	do_copy(struct flist *files);
-int 	clone_attrs(struct file *src, char *dst);
+int 	crawl_files(char *item, char *dest);
+int 	do_copy();
+int 	clone_attrs(struct file *src);
 int 	f_equal(struct file *a, struct file *b);
 char 	*strccat(char *a, char *b);
 char 	*path_str(char *path, char *sub);
 char 	ask_overwrite(char *src, char *src_size, char *dst, char *dst_size);
 char 	*size_str(ullong bytes);
 ulong 	speed(ulong spd);
-struct 	flist *build_list(int argc, int start, char *argv[]);
+

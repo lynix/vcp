@@ -59,7 +59,7 @@ int	flist_add(struct flist *list, struct file *item) {
 	temp_s = list->size;
 	list->size += item->size;
 	list->count++;
-	if (list->count <= temp_c || list->size <= temp_s) {
+	if (list->count <= temp_c || list->size < temp_s) {
 		list->count = temp_c;
 		list->size = temp_s;
 		return -1;
