@@ -16,9 +16,11 @@
  * along with vcp. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define __USE_LARGEFILE64
-#define _LARGEFILE_SOURCE
-#define _LARGEFILE64_SOURCE
+#ifndef __USE_LARGEFILE64
+	#define __USE_LARGEFILE64
+	#define _LARGEFILE_SOURCE
+	#define _LARGEFILE64_SOURCE
+#endif
 
 #include <stdlib.h>						/* realpath(), and others	*/
 #include <sys/stat.h>					/* file attributes			*/

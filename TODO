@@ -10,16 +10,4 @@ I will clean up all this when the project reaches a stable state.
 
 Known bugs:
 
-	* transfer fails on i686 box with limited ressources for an 4.2GiB
-	  mdf file:  "unable to open for reading (Value too large for
-				  defined data type)"
-
-	* transfer of 5.2GiB multiple large files fails on i686 box with
-	  limited ressources:
-	  "vcp: malloc.c:3074: sYSMALLOc: Assertion `(old_top == (((mbinptr)
-	   (((char *) &((av)->bins[((1) - 1) * 2])) - __builtin_offsetof
-	   (struct malloc_chunk, fd)))) && old_size == 0) || ((unsigned
-	   long) (old_size) >= (unsigned long)((((__builtin_offsetof (struct
-	    malloc_chunk, fd_nextsize))+((2 * (sizeof(size_t))) - 1)) &
-		~((2 * (sizeof(size_t))) - 1))) && ((old_top)->size & 0x1) &&
-		((unsigned long)old_end & pagemask) == 0)' failed."
+	(currently none)

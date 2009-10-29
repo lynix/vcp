@@ -229,14 +229,14 @@ int copy_file(struct file *f_src, ulong t_num, ullong t_size,
 	}
 	
 	/* open source (true, true ;) ) */
-	if ((fd_src = open(f_src->src, O_RDONLY)) == -1) {
+	if ((fd_src = open64(f_src->src, O_RDONLY)) == -1) {
 		error_append(failed, f_src->src, "unable to open for reading",
 					strerror(errno));
 		return -1;
 	}
 	
 	/* open destination */
-	if ((fd_dst = open(dest, O_CREAT|O_EXCL|O_WRONLY, (mode_t)0600)) == -1) {
+	if ((fd_dst = open64(dest, O_CREAT|O_EXCL|O_WRONLY, (mode_t)0600)) == -1) {
 		error_append(failed, dest, "unable to open for writing",
 					strerror(errno));
 		close(fd_src);

@@ -18,6 +18,10 @@
 
 #define _POSIX_SOURCE		/* fsync() */
 
+#define __USE_LARGEFILE64
+#define _LARGEFILE_SOURCE
+#define _LARGEFILE64_SOURCE
+
 #include <stdio.h>
 #include <time.h>
 #include <fcntl.h>

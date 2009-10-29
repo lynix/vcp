@@ -9,6 +9,8 @@
 			Fixed CRITICAL bug in build_list(): wrong allocation size
 			for destination string buffer.
 
+			Fixed large files (again... grml).
+
 2009-10-28	Fixed directory deletion with -d.
 
 			Added -u policy for existing files: keep existing files if
