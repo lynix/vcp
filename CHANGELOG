@@ -1,22 +1,37 @@
+2009-10-29	Fixed path_str() to avoid '//' in path strings.
+
+			Extended strccat() to also be able to shrink strings to
+			their real size.
+
+			Fixed build_list(): free temp string for realpath() as
+			suggested in its manpage.
+
+			Fixed CRITICAL bug in build_list(): wrong allocation size
+			for destination string buffer.
+
 2009-10-28	Fixed directory deletion with -d.
+
 			Added -u policy for existing files: keep existing files if
 			they match in size, owner and times; overwrite changed ones.
+			
 			Added compile timestamp to usage information.
+			
 			Added graphical progress indicator (progress bar).
 
 2009-10-27	Removed cutting filenames to terminal width.
+
 			Added attribute-cloning for directories, too.
 
 2009-10-25	Fixed "bad file descriptor".
+
 			Fixed Makefile: clean binary AND object files.
 
 2009-10-24	Cleaned up the type-mess, fixed large files; new used types
 			are:
 				- speed & number of files:      unsigned long
 				- file size & total list size:  unsigned long long
-
 			Maximum file/list size therefore is now ~16.8TiB.
-
+			
 			Fixed cutting to terminal width.
 
 2009-10-20	Fixed ignoring of -D, removed usage info on failed cmdline

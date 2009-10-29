@@ -72,16 +72,22 @@ int main(int argc, char *argv[])
 int build_list(int argc, int start, char *argv[])
 {
 	struct file *f_dest;
-	char *item, *dest, *dest_dir, *dest_base;
+	char *temp, *item, *dest, *dest_dir, *dest_base;
 	
 	/* clean destination path */
-	dest_dir = calloc(strlen(argv[argc-1]+1), 1);
-	dest_base = calloc(strlen(argv[argc-1]+1), 1);
+	dest_dir = malloc(strlen(argv[argc-1])+1);
+	dest_base = malloc(strlen(argv[argc-1])+1);
+	
 	strcpy(dest_dir, argv[argc-1]);
 	strcpy(dest_base, argv[argc-1]);
+	
 	dest_dir = dirname(dest_dir);
 	dest_base = basename(dest_base);
-	dest_dir = realpath(dest_dir, NULL);
+	
+	temp = realpath(dest_dir, NULL);
+	dest_dir = strccat(temp, NULL);
+	free(temp);
+	
 	dest = path_str(dest_dir, dest_base);
 	
 	/* logic checking (do not copy file over dir / dir over file) */
@@ -114,7 +120,9 @@ int build_list(int argc, int start, char *argv[])
 	/* iterate through cmdline and insert items */
 	for (int i=start; i<(argc-1); i++) {
 		/* clean item path */
-		item = realpath(argv[i], NULL);
+		temp = realpath(argv[i], NULL);
+		item = strccat(temp,NULL);
+		free(temp);
 		/* crawl item */
 		if (crawl_files(item, dest) != 0) {
 			free(file_list);
@@ -732,16 +740,22 @@ char *strccat(char *a, char *b)
 	
 	if (a == NULL && b == NULL) {
 		return NULL;
-	} else if (a == NULL) {
-		return b;
-	} else if (b == NULL) {
-		return a;
 	}
 	
-	n = strlen(a);
-	m = strlen(b);
-
-	if ((retval = calloc(n+m+1, 1)) == NULL) {
+	if (a == NULL) {
+		n = 0;
+	} else {
+		n = strlen(a);
+	}
+	
+	if (b == NULL) {
+		m = 0;
+	} else {
+		m = strlen(b);
+	}
+		
+	
+	if ((retval = malloc(n+m+1)) == NULL) {
 		return NULL;
 	}
 	for (int i=0; i<n; i++) {
@@ -760,8 +774,12 @@ char *path_str(char *path, char *sub)
 	/* builds a path string with separating '/' 						*/
 	
 	char *retval;
-	
-	retval = strccat(path, "/");
+
+	if (path[strlen(path)-1] != '/') {
+		retval = strccat(path, "/");
+	} else {
+		retval = path;
+	}
 	retval = strccat(retval, sub);
 	
 	return retval;
