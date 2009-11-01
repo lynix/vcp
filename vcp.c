@@ -55,6 +55,7 @@ int main(int argc, char *argv[])
 			printf("%s --> %s\n", file_list->items[i]->src,
 				file_list->items[i]->dst);
 		}
+		putchar('\n');
 		fflush(stdout);
 	}
 	
@@ -72,7 +73,7 @@ int main(int argc, char *argv[])
 int build_list(int argc, int start, char *argv[])
 {
 	struct file *f_dest;
-	char *temp, *item, *dest, *dest_dir, *dest_base;
+	char *item, *dest, *dest_dir, *dest_base;
 	
 	/* clean destination path */
 	dest_dir = malloc(strlen(argv[argc-1])+1);
@@ -84,9 +85,10 @@ int build_list(int argc, int start, char *argv[])
 	dest_dir = dirname(dest_dir);
 	dest_base = basename(dest_base);
 	
-	temp = realpath(dest_dir, NULL);
-	dest_dir = strccat(temp, NULL);
-	free(temp);
+	dest_dir = realpath(dest_dir, NULL);
+	if ((dest_dir = realloc(dest_dir, strlen(dest_dir)+1)) == NULL) {
+		return -1;
+	}
 	
 	dest = path_str(dest_dir, dest_base);
 	
@@ -120,9 +122,8 @@ int build_list(int argc, int start, char *argv[])
 	/* iterate through cmdline and insert items */
 	for (int i=start; i<(argc-1); i++) {
 		/* clean item path */
-		temp = realpath(argv[i], NULL);
-		item = strccat(temp,NULL);
-		free(temp);
+		item = realpath(argv[i], NULL);
+		item = realloc(item, strlen(item)+1);
 		/* crawl item */
 		if (crawl_files(item, dest) != 0) {
 			free(file_list);
@@ -747,14 +748,12 @@ char *strccat(char *a, char *b)
 	} else {
 		n = strlen(a);
 	}
-	
 	if (b == NULL) {
 		m = 0;
 	} else {
 		m = strlen(b);
 	}
 		
-	
 	if ((retval = malloc(n+m+1)) == NULL) {
 		return NULL;
 	}

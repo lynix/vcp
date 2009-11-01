@@ -1,3 +1,5 @@
+2009-11-01  Simplified treatment of realpath()-generated strings.
+
 2009-10-29	Fixed path_str() to avoid '//' in path strings.
 
 			Extended strccat() to also be able to shrink strings to
