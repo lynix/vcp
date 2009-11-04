@@ -47,4 +47,5 @@ struct file {
 	struct	utimbuf	times;
 };
 
-struct file *get_file(char *fname);
+struct 	file *f_get(char *fname);
+int 	f_equal(struct file *a, struct file *b);

@@ -84,7 +84,6 @@ int 	parse_opts(int argc, char *argv[]);
 int 	crawl_files(char *item, char *dest);
 int 	do_copy();
 int 	clone_attrs(struct file *src);
-int 	f_equal(struct file *a, struct file *b);
 char 	*strccat(char *a, char *b);
 char 	*path_str(char *path, char *sub);
 char 	ask_overwrite(char *src, char *src_size, char *dst, char *dst_size);

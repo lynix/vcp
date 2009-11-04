@@ -1,3 +1,8 @@
+2009-11-04	Changed directory creation logic: create destination
+			directory structure after the file-crawling. Thus no changes
+			are made or directories are created until all files are
+			checked for access and ready to be transferred.
+
 2009-11-01  Simplified treatment of realpath()-generated strings.
 
 2009-10-29	Fixed path_str() to avoid '//' in path strings.

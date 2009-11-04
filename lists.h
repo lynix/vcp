@@ -16,6 +16,7 @@
  * along with vcp. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
 #include "file.h"
 
 #define LIST_START 5L
@@ -31,6 +32,7 @@ struct flist {
 
 struct	flist *flist_init();
 int		flist_add(struct flist *list, struct file *item);
+int		flist_search(struct flist *list, char *dest_str);
 
 
 struct strlist {

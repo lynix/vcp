@@ -68,6 +68,17 @@ int	flist_add(struct flist *list, struct file *item) {
 	return 0;
 }
 
+int	flist_search(struct flist *list, char *dest_str)
+{
+	for (ulong i=0; i < list->count; i++) {
+		if (strcmp(list->items[i]->dst, dest_str) == 0) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 struct strlist *strlist_init() {
 	struct strlist *list;
 	

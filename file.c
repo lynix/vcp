@@ -18,7 +18,7 @@
 
 #include "file.h"
 
-struct file *get_file(char *fname)
+struct file *f_get(char *fname)
 {
 	struct file *new_item;
 	struct stat64 filestat;
@@ -62,4 +62,24 @@ struct file *get_file(char *fname)
 	}
 	
 	return new_item;
+}
+
+int f_equal(struct file *a, struct file *b)
+{
+	/* compares two given files regarding their size, owner and times 	*/
+	
+	/* compare filesize */
+	if (a->size != b->size) {
+		return 0;
+	}
+	/* compare owner */
+	if (a->uid != b->uid || a->gid != b->gid) {
+		return 0;
+	}
+	/* compare modification times */
+	if (a->times.modtime != b->times.modtime) {
+		return 0;
+	}
+	
+	return 1;
 }

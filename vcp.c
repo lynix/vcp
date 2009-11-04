@@ -92,8 +92,8 @@ int build_list(int argc, int start, char *argv[])
 	
 	dest = path_str(dest_dir, dest_base);
 	
-	/* logic checking (do not copy file over dir / dir over file) */
-	if ((f_dest = get_file(dest)) != NULL) {
+	/* logic checking (do not copy file/dir over dir/file)				*/
+	if ((f_dest = f_get(dest)) != NULL) {
 		if (f_dest->type == RFILE) {
 			if ((argc-start-1) != 1) {
 				print_error("unable to copy multiple items to one file");
@@ -102,6 +102,7 @@ int build_list(int argc, int start, char *argv[])
 		}
 		free(f_dest);
 	} else {
+		errno = 0;
 		if ((argc-start-1) > 1) {
 			print_error("destination directory '%s' does not exist", 
 						argv[argc-1]);
@@ -159,6 +160,21 @@ int do_copy()
 	
 	if ((failed = strlist_init()) == NULL) {
 		return -1;
+	}
+
+	/* create destination directory structure */
+	for (ulong i=0; i < dir_list->count; i++) {
+		if ((item = f_get(dir_list->items[i]->dst)) != NULL) {
+			free(item);
+		} else {
+			errno = 0;
+			if (mkdir(dir_list->items[i]->dst, dir_list->items[i]->mode)
+					!= 0) {
+				error_append(failed, dir_list->items[i]->dst,
+							"unable to create destination directory",
+							strerror(errno));
+			}
+		}
 	}
 
 	/* copy files */
@@ -219,14 +235,16 @@ int copy_file(struct file *f_src, ulong t_num, ullong t_size,
 	
 	/* check if destination exists */
 	dest = f_src->dst;
-	if ((f_dest = get_file(dest)) != NULL) {
-		/* overwrite (remove and recreate), we know the user wants it */
+	if ((f_dest = f_get(dest)) != NULL) {
+		free(f_dest);
+		/* remove, we know the user wants it from crawl_files()*/
 		if (remove(dest) != 0) {
-			error_append(failed, f_src->src, "unable to delete existing destination",
+			error_append(failed, dest, "unable to delete existing file",
 						strerror(errno));
 			return -1;
 		}
-		free(f_dest);
+	} else {
+		errno = 0;
 	}
 	
 	/* open source (true, true ;) ) */
@@ -370,7 +388,7 @@ int copy_file(struct file *f_src, ulong t_num, ullong t_size,
 
 int crawl_files(char *src, char *dest)
 {
-	/* recursively scan directory and adds files to transfer list		*/
+	/* recursively scans directory and adds files to transfer list		*/
 	
 	DIR *d_src;
 	struct dirent *dp_src;
@@ -378,7 +396,7 @@ int crawl_files(char *src, char *dest)
 	struct file *f_dest;
 	
 	/* check source access */
-	if ((f_src = get_file(src)) == NULL) {
+	if ((f_src = f_get(src)) == NULL) {
 		print_error("failed to open '%s': %s", src, strerror(errno));
 		return -1;
 	}
@@ -386,7 +404,7 @@ int crawl_files(char *src, char *dest)
 	/* check source type */
 	if (f_src->type == RDIR) {
 		/* directory, check destination */
-		if ((f_dest = get_file(dest)) != NULL) {
+		if ((f_dest = f_get(dest)) != NULL) {
 			if (f_dest->type == RFILE) {
 				print_error("unable to copy dir '%s' over file '%s'", src,
 							dest);
@@ -398,20 +416,17 @@ int crawl_files(char *src, char *dest)
 			f_dest = NULL;
 			/* extend destination path */
 			dest = path_str(dest, f_src->filename);
+		} else {
+			errno = 0;
 		}
 		/* check destination again (eventually new path) */
-		if ((f_dest = get_file(dest)) == NULL) {
+		if ((f_dest = f_get(dest)) == NULL) {
+			errno = 0;
 			/* destination directory does not exist, create it */
-			if (mkdir(dest, f_src->mode) != 0) {
-				print_error("failed to create directory '%s': %s", dest,
-							strerror(errno));
+			f_src->dst = dest;
+			if (flist_add(dir_list, f_src) != 0) {
+				print_debug("failed to add '%s' to dir list", src);
 				return -1;
-			} else {
-				f_src->dst = dest;
-				if (flist_add(dir_list, f_src) != 0) {
-					print_debug("failed to add '%s' to dir list", src);
-					return -1;
-				}
 			}
 		} else {
 			/* destinatio exists, check type */
@@ -441,7 +456,7 @@ int crawl_files(char *src, char *dest)
 				continue;
 			}
 			/* recursively crawl directory contents */
-			if (crawl_files(path_str(src, dp_src->d_name), dest) 
+			if (crawl_files(path_str(src, dp_src->d_name), path_str(dest, dp_src->d_name)) 
 					!= 0) {
 				return -1;
 			}
@@ -449,18 +464,20 @@ int crawl_files(char *src, char *dest)
 		closedir(d_src);
 	} else {
 		/* file, check destination */
-		if ((f_dest = get_file(dest)) != NULL) {
+		if ((f_dest = f_get(dest)) != NULL) {
 			if (f_dest->type == RDIR) {
 				dest = path_str(dest, f_src->filename);
 			}
 			free(f_dest);
 			f_dest = NULL;
 			/* check destination again (pot. new path) */
-			if ((f_dest = get_file(dest)) != NULL) {
+			if ((f_dest = f_get(dest)) != NULL) {
 				if (f_dest->type == RDIR) {
 					print_error("unable to replace dir '%s' with file '%s'", 
 								dest, src);
 					return -1;
+				} else {
+					errno = 0;
 				}
 				/* decide whether to skip/overwrite */
 				if (!opts.force) {
@@ -482,6 +499,13 @@ int crawl_files(char *src, char *dest)
 						return 0;
 					}
 				}
+			}
+		} else {
+			errno = 0;
+			/* destination not existing, check if to be created */
+			while (flist_search(dir_list, dest)) {
+				/* will be created, extend path */
+				dest = path_str(dest, f_src->filename);
 			}
 		}
 		/* finally add file to file list */
@@ -830,26 +854,6 @@ ulong speed(ulong spd)
 	sum += spd;
 	
 	return sum / SPEED_N;
-}
-
-int f_equal(struct file *a, struct file *b)
-{
-	/* compares two given files regarding their size, owner and times 	*/
-	
-	/* compare filesize */
-	if (a->size != b->size) {
-		return 0;
-	}
-	/* compare owner */
-	if (a->uid != b->uid || a->gid != b->gid) {
-		return 0;
-	}
-	/* compare modification times */
-	if (a->times.modtime != b->times.modtime) {
-		return 0;
-	}
-	
-	return 1;
 }
 
 void error_append(struct strlist *list, char *fname, char *error,
