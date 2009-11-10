@@ -15,11 +15,12 @@ IUSE=""
 RDEPEND=""
 DEPEND="${RDEPEND}"
 
-src_compile() {
-	emake || die "emake failed"
+src_compile() {   
+	sed -e "s/CFLAGS =/CFLAGS = ${CFLAGS}/" -i Makefile
+	emake LDFLAGS="${LDFLAGS}" || die "emake failed"
 }
 
 src_install() {
-	emake install DESTDIR="${D}" || die "emake install failed"
+	emake install DESTDIR="${D}/usr" || die "emake install failed"
 	dodoc CHANGELOG README-beta TODO || die
 }

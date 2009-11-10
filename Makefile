@@ -3,7 +3,7 @@ CFLAGS = -Wall -ansi -std=c99 -pedantic -g
 DESTDIR = /usr/local
 
 vcp : vcp.o lists.o file.o
-	$(CC) -o $@ $^
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 vcp.o : vcp.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ -c $<
