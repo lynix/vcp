@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -ansi -std=c99 -pedantic -g
-DESTDIR = /usr/local/bin
+DESTDIR = /usr/local
 
 vcp : vcp.o lists.o file.o
 	$(CC) -o $@ $^
@@ -15,7 +15,7 @@ file.o : file.c
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 install: vcp
-	install -m 755 vcp $(DESTDIR)
+	install -m 755 vcp $(DESTDIR)/bin/vcp
 
 clean :
 	rm -f vcp *.o
