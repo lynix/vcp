@@ -6,13 +6,13 @@ vcp : vcp.o lists.o file.o
 	$(CC) -o $@ $^
 
 vcp.o : vcp.c
-	$(CC) $(CFLAGS) -o $@ -c $<
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ -c $<
 
 lists.o : lists.c
-	$(CC) $(CFLAGS) -o $@ -c $<
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ -c $<
 
 file.o : file.c
-	$(CC) $(CFLAGS) -o $@ -c $<
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ -c $<
 
 install: vcp
 	mkdir -p $(DESTDIR)/bin
