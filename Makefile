@@ -15,6 +15,7 @@ file.o : file.c
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 install: vcp
+	mkdir -p $(DESTDIR)/bin
 	install -m 755 vcp $(DESTDIR)/bin/vcp
 
 clean :
