@@ -1,0 +1,45 @@
+# Contributor: lynix <lynix47@gmail.com>
+pkgname=verbose-cp
+pkgver=20091019
+pkgrel=1
+pkgdesc="cp with progress output and some nice features"
+arch=('i686' 'x86_64')
+url="http://github.com/lynix/vcp/"
+license=('GPL')
+makedepends=('git' 'glibc')
+depends=('glibc')
+source=()
+md5sums=()
+provides=('verbose-cp')
+conflicts=('verbose-cp')
+
+_gitroot="git://github.com/lynix/vcp.git"
+_gitname="vcp"
+
+build() {
+
+	cd ${srcdir}
+	msg "Connecting to GIT server..."
+  if [ -d $_gitname ] ; then
+    rm -r $_gitname
+  fi
+  git clone $_gitroot
+
+  msg "GIT checkout done or server timeout"
+  msg "Starting make..."
+
+  if [ -d $_gitname-build ]; then
+    rm -rf $_gitname-build
+  fi
+  # Copy Latest files to Build Directory
+  git clone ${srcdir}/$_gitname ${srcdir}/$_gitname-build
+  cd ${srcdir}/$_gitname-build
+
+  # Build Source
+  make || return 1
+
+  # Install Source
+  make install || return 1
+}
+
+# vim:set ts=2 sw=2 et:
