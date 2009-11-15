@@ -3,8 +3,6 @@ I will clean up all this when the project reaches a stable state.
 
  * symlinks
  * speed calculation per file?
- * redesign switches: -Q completely quiet, -q no status, -b bars,
-                      -B bars only, etc.
  * signal handling (delete incomplete on interrupt)
  * free space check?
  * last but probably most important: DOCUMENTATION! (readme, proper
