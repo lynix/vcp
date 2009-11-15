@@ -92,10 +92,10 @@ I encourage you to rather use 'cp' and 'mv' for critical system files.
 CONTACT
 --------------------------
 If you have any questions, suggestions or comments please feel free to
-write me an email (lynix47@gmail.com, GnuPG-key will follow) or open a
-bug report on GitHub. I always appreciate constructive feedback, and as
-this is my first 'project in the wild', messages like 'Hey, I just tried
-your tool and it made my day!' are welcome, too :-)
+write me an email (lynix47@gmail.com, GPG key 4804CCA9 on keys.gnupg.net)
+or open a bug report on GitHub. I always appreciate constructive feedback,
+and as this is my first 'project in the wild', messages like 'Hey, I just
+tried your tool and it made my day!' are welcome, too :-)
 
 
 LICENSE
