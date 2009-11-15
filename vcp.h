@@ -48,6 +48,7 @@
 struct options {
 	int bars;
 	int force;
+	int filenames;
 	int sync;
 	int delete;
 	int keep;

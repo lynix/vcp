@@ -1,3 +1,7 @@
+2009-11-08  Redesigned output control and options in general.
+            Added "-B" and "-Q" for bars-only and "even more quiet".
+            Added proper README.
+
 2009-11-04	Changed directory creation logic: create destination
 			directory structure after the file-crawling. Thus no changes
 			are made or directories are created until all files are

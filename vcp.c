@@ -286,8 +286,10 @@ int copy_file(struct file *f_src, ulong t_num, ullong t_size,
 	error = 0;
 	time(&timer);
 
-	/* print source filename */
-	printf("%s\n", f_src->src);
+	/* print source filename if not suppressed */
+	if (opts.filenames) {
+		printf("%s\n", f_src->src);
+	}
 	
 	/* the part you are looking for: read from source... */
 	while ((bytes_r = read(fd_src, buffer, buffsize))) {
@@ -649,18 +651,24 @@ void print_usage()
     printf("Foundation, either version 3 of the License, or (at your\n");
     printf("option) any later version.\n\n");
     
-	printf("Usage:	vcp [OPTIONS] [SOURCE(S)] [DESTINATION]\n\n");
-	printf("  -b  display progress bars instead of text\n");
+	printf("Usage:	vcp [OPTIONS] SOURCE(S) DESTINATION\n");
+	printf("\n");
+	printf("Behaviour:\n");
 	printf("  -d  delete source(s) on success\n");
 	printf("  -f  overwrite existing files (default: ask)\n");
-	printf("  -h  print usage and license information\n");
 	printf("  -k  skip all existing files (default: ask)\n");
-	printf("  -q  do not print progress information\n");
-	printf("  -s  ensure each file is synched to disk on completion\n");
-	printf("  -u  skip identical existing files, update changed ones\n");
+	printf("  -u  skip identical existing files\n");
+	printf("  -s  ensure each file is synched to disk after write\n");
+	printf("Output control:\n");
+	printf("  -b  display progress bars (default: text)\n");
+	printf("  -B  display progress bars only, no filenames\n");
+	printf("  -q  do not print progress indicators\n");
+	printf("  -Q  do not print progress indicators nor filenames\n");
+	printf("General options:\n");
+	printf("  -h  print usage and license information\n");
 	printf("  -v  be verbose\n");
-	printf("  -D  print debugging messages\n\n");
-	
+	printf("  -D  print debugging messages\n");
+	printf("\n");
 	printf("This version of vcp was built on %s %s.\n", __DATE__,
 			__TIME__);
 	
@@ -673,6 +681,7 @@ void init_opts()
 	
 	opts.bars = 0;
 	opts.force = 0;
+	opts.filenames = 1;
 	opts.sync = 0;
 	opts.delete = 0;
 	opts.keep = 0;
@@ -693,10 +702,14 @@ int parse_opts(int argc, char *argv[])
     
     opterr = 0;
 	
-	while ((c = getopt(argc, argv, "bdfhkqsluvD")) != -1) {
+	while ((c = getopt(argc, argv, "bdfhkqsluvDBQ")) != -1) {
 		switch (c) {
 			case 'b':
 				opts.bars = 1;
+				break;
+			case 'B':
+				opts.bars = 1;
+				opts.filenames = 0;
 				break;
 			case 'f':
 				if (opts.keep == 0) {
@@ -719,6 +732,10 @@ int parse_opts(int argc, char *argv[])
 				break;
 			case 'q':
 				opts.quiet = 1;
+				break;
+			case 'Q':
+				opts.quiet = 1;
+				opts.filenames = 0;
 				break;
 			case 'd':
 				opts.delete = 1;
