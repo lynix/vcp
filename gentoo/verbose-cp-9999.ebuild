@@ -22,5 +22,5 @@ src_compile() {
 
 src_install() {
 	emake install DESTDIR="${D}/usr" || die "emake install failed"
-	dodoc CHANGELOG README-beta TODO || die
+	dodoc CHANGELOG README TODO || die
 }
