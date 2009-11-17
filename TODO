@@ -4,6 +4,8 @@ I will clean up all this when the project reaches a stable state.
  * symlinks
  * speed calculation per file?
  * signal handling (delete incomplete on interrupt)
+ * multithreading: worker-thread for copying, controller-thread that
+   sends periodic interrupts and generates progress output
  * free space check?
  * last but probably most important: DOCUMENTATION! (readme, proper
    homepage, github-wiki, etc.)
