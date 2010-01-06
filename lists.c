@@ -1,4 +1,4 @@
-/* Copyright lynix <lynix47@gmail.com>, 2009
+/* Copyright lynix <lynix47@gmail.com>, 2009, 2010
  * 
  * This file is part of vcp (verbose cp).
  *
@@ -30,7 +30,9 @@ struct flist *flist_init() {
 		return NULL;
 	}
 	list->count = 0;
+    list->count_f = 0;
 	list->size = 0;
+    list->bytes_done = 0;
 	list->arr_size = LIST_START;
 
 	return list;
@@ -38,7 +40,7 @@ struct flist *flist_init() {
 
 int	flist_add(struct flist *list, struct file *item) {
 	ulong  temp_c;
-	ullong temp_s;
+	off_t temp_s;
 	
 	if (list == NULL) {
 		return -1;
@@ -62,21 +64,49 @@ int	flist_add(struct flist *list, struct file *item) {
 	if (list->count <= temp_c || list->size < temp_s) {
 		list->count = temp_c;
 		list->size = temp_s;
+        list->items[list->count] = NULL;
 		return -1;
 	}
+    if (item->type == RFILE) {
+        list->count_f++;
+    }
 	
 	return 0;
 }
 
-int	flist_search(struct flist *list, char *dest_str)
+struct file *flist_search_src(struct flist *list, struct file *item)
 {
 	for (ulong i=0; i < list->count; i++) {
-		if (strcmp(list->items[i]->dst, dest_str) == 0) {
-			return 1;
+		if (strcmp(list->items[i]->src, item->src) == 0 &&
+                list->items[i]->type != SLINK) {
+			return list->items[i];
 		}
 	}
 
-	return 0;
+	return NULL;
+}
+
+void flist_sort_dst(struct flist *list)
+{
+    if (flist_shrink(list) != 0) {
+        return;
+    }
+
+    qsort(list->items, list->arr_size, sizeof(struct file *),
+            f_cmpr_dst);
+
+    return;
+}
+
+int flist_shrink(struct flist *list)
+{
+    if ((list->items = realloc(list->items, list->count *
+            sizeof(struct file *)))	== NULL) {
+        return -1;
+    }
+    list->arr_size = list->count;
+
+    return 0;
 }
 
 struct strlist *strlist_init() {

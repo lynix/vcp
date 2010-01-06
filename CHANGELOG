@@ -1,74 +1,102 @@
+2010-01-XX  Almost a rewrite, so lots of things changed. The big ones:
+
+             Put all helper functions in a separate file, as well as
+             the main options.
+
+             Redesigned overwriting confirmation dialogue.
+
+             Cleaned up LFS (Large File Support).
+
+             Cleaned up the type-mess: off_t now used for all sizes.
+
+             Added support for Symlinks.
+
+             Redesigned whole file crawling logic.
+
+             Implemented multithreading: copy-process is not interrupted
+             on each buffer completion anymore for statistics updating.
+
+             New assertion: no written changes to the filesystem until
+             copy list creation is finished.
+
+             New option: pretend-mode (-p).
+
+             New option: ignore attribute errors (-t). Useful when
+             copying files owned by root or a locally not existing user.
+
 2009-11-08  Redesigned output control and options in general.
+
             Added "-B" and "-Q" for bars-only and "even more quiet".
+            
             Added proper README.
 
-2009-11-04	Changed directory creation logic: create destination
-			directory structure after the file-crawling. Thus no changes
-			are made or directories are created until all files are
-			checked for access and ready to be transferred.
+2009-11-04  Changed directory creation logic: create destination
+            directory structure after the file-crawling. Thus no changes
+            are made or directories are created until all files are
+            checked for access and ready to be transferred.
 
 2009-11-01  Simplified treatment of realpath()-generated strings.
 
-2009-10-29	Fixed path_str() to avoid '//' in path strings.
+2009-10-29  Fixed path_str() to avoid '//' in path strings.
 
-			Extended strccat() to also be able to shrink strings to
-			their real size.
+            Extended strccat() to also be able to shrink strings to
+            their real size.
 
-			Fixed build_list(): free temp string for realpath() as
-			suggested in its manpage.
+            Fixed build_list(): free temp string for realpath() as
+            suggested in its manpage.
 
-			Fixed CRITICAL bug in build_list(): wrong allocation size
-			for destination string buffer.
+            Fixed CRITICAL bug in build_list(): wrong allocation size
+            for destination string buffer.
 
-			Fixed large files (again... grml).
+            Fixed large files (again... grml).
 
-2009-10-28	Fixed directory deletion with -d.
+2009-10-28  Fixed directory deletion with -d.
 
-			Added -u policy for existing files: keep existing files if
-			they match in size, owner and times; overwrite changed ones.
-			
-			Added compile timestamp to usage information.
-			
-			Added graphical progress indicator (progress bar).
+            Added -u policy for existing files: keep existing files if
+            they match in size, owner and times; overwrite changed ones.
+            
+            Added compile timestamp to usage information.
+            
+            Added graphical progress indicator (progress bar).
 
-2009-10-27	Removed cutting filenames to terminal width.
+2009-10-27  Removed cutting filenames to terminal width.
 
-			Added attribute-cloning for directories, too.
+            Added attribute-cloning for directories, too.
 
-2009-10-25	Fixed "bad file descriptor".
+2009-10-25  Fixed "bad file descriptor".
 
-			Fixed Makefile: clean binary AND object files.
+            Fixed Makefile: clean binary AND object files.
 
-2009-10-24	Cleaned up the type-mess, fixed large files; new used types
-			are:
-				- speed & number of files:      unsigned long
-				- file size & total list size:  unsigned long long
-			Maximum file/list size therefore is now ~16.8TiB.
-			
-			Fixed cutting to terminal width.
+2009-10-24  Cleaned up the type-mess, fixed large files; new used types
+            are:
+                - speed & number of files:      unsigned long
+                - file size & total list size:  unsigned long long
+            Maximum file/list size therefore is now ~16.8TiB.
+            
+            Fixed cutting to terminal width.
 
-2009-10-20	Fixed ignoring of -D, removed usage info on failed cmdline
-			parsing.
+2009-10-20  Fixed ignoring of -D, removed usage info on failed cmdline
+            parsing.
 
-2009-10-06	Switched to rsync-like progress output style.
+2009-10-06  Switched to rsync-like progress output style.
 
-2009-09-29	Added CHANGELOG to provide more detailed information than
-			the git-commit-summaries.
-			
-			Switched data structure for file lists from double linked
-			lists to array-based ones.
-			This was done because of the much simpler code compared to
-			all that pointer stuff in the version with linked lists. I
-			think this change does not mean any disadvantage in memory
-			consumption because only the pointers to the items need to
-			be stored and therefore the array itself should not get a
-			significant size.
-			  
-2009-09-25	Added dynamic limits information, some cleanup.
+2009-09-29  Added CHANGELOG to provide more detailed information than
+            the git-commit-summaries.
+            
+            Switched data structure for file lists from double linked
+            lists to array-based ones.
+            This was done because of the much simpler code compared to
+            all that pointer stuff in the version with linked lists. I
+            think this change does not mean any disadvantage in memory
+            consumption because only the pointers to the items need to
+            be stored and therefore the array itself should not get a
+            significant size.
+              
+2009-09-25  Added dynamic limits information, some cleanup.
 
-2009-09-25	Some fixes, added bugs to TODO.
+2009-09-25  Some fixes, added bugs to TODO.
 
-2009-09-24	Usage information, updated TODOs, added proper license
-			information, added git-ignores to keep binaries out.
+2009-09-24  Usage information, updated TODOs, added proper license
+            information, added git-ignores to keep binaries out.
 
-2009-09-23	Initial commit.
+2009-09-23  Initial commit.

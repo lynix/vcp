@@ -1,4 +1,4 @@
-/* Copyright lynix <lynix47@gmail.com>, 2009
+/* Copyright lynix <lynix47@gmail.com>, 2009, 2010
  * 
  * This file is part of vcp (verbose cp).
  *
@@ -16,79 +16,48 @@
  * along with vcp. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define _POSIX_SOURCE		/* fsync() */
-
-#define __USE_LARGEFILE64
-#define _LARGEFILE_SOURCE
-#define _LARGEFILE64_SOURCE
+#define _XOPEN_SOURCE 500
 
 #include <stdio.h>
-#include <time.h>
+#include <time.h>           /* clock_gettime() */
 #include <fcntl.h>
 #include <dirent.h>
 #include <stdlib.h>
 #include <libgen.h>			/* basename(), dirname() */
-#include <unistd.h>
+#include <unistd.h>         /* symlink(), and others */
 #include <getopt.h>
 #include <ctype.h>
-#include <stdarg.h>
-#include <string.h>
 #include <limits.h>			/* realpath() 								*/
 #include <stdlib.h>			/* realpath() 								*/
 #include <errno.h>			/* errno, strerror() 						*/
 #include <sys/ioctl.h>		/* ioctl(), get terminal width 				*/
+#include <pthread.h>        /* threads, what else                       */
 
 #include "lists.h"			/* my list implementations 					*/
+#include "helpers.h"        /* little helper functions                  */
+#include "options.h"        /* global options, options struct           */
 
-#define BUFFS 1048576		/* 1MiB buffer for read() and write() 		*/
-#define MAX_SIZE_L 30		/* maximum length of size string, numbers 	*/
-#define SPEED_N 5			/* speed middle calculation 				*/
-#define BAR_WIDTH 20		/* progress bar width (characters) 			*/
+/* globals */
+struct options  opts;
+struct flist    *copy_list;
+struct strlist  *fail_list;
+char            file_done_flag;
+pthread_mutex_t file_bytes_lock;
+off_t           file_bytes_done;
+off_t           speed_arr[SPEED_N];
 
-struct options {
-	int bars;
-	int force;
-	int filenames;
-	int sync;
-	int delete;
-	int keep;
-	int quiet;
-	int update;
-	int verbose;
-	int debug;
-};
-
-struct	options opts;
-struct	flist *file_list;
-struct	flist *dir_list;
-ulong	speeds[SPEED_N];
-
-# if defined __STRICT_ANSI__
-	char 	*realpath (const char *, char *);
-	int 	fsync(int);
-# endif
-
-void 	print_usage();
+/* functions */
 void 	init_opts();
-void 	print_error(char *string, ...);
-void	print_debug(char *string, ...);
-void	print_limits();
-void	progress(double t_perc, ulong t_num, double perc, ulong bps,
-				long eta, ullong fsize);
-void 	error_append(struct strlist *list, char *fname, char *error,
-					 char * reason);
+void    fail_append(char *fname, char *error);
+void    list_show();
+void    *do_copy(void *p);
+void	*progress(void *p);
 int		build_list(int argc, int start, char *argv[]);
-int 	copy_file(struct file *item, ulong total_filenum, 
-				 ullong total_size, ullong total_done, time_t total_start,
-				 struct strlist *failed);
+int 	work_list();
 int 	parse_opts(int argc, char *argv[]);
-int 	crawl_files(char *item, char *dest);
-int 	do_copy();
-int 	clone_attrs(struct file *src);
-char 	*strccat(char *a, char *b);
-char 	*path_str(char *path, char *sub);
-char 	ask_overwrite(char *src, char *src_size, char *dst, char *dst_size);
-char 	*size_str(ullong bytes);
-char	*prog_bar(double percent);
-ulong 	speed(ulong spd);
-
+int     crawl(char *src, char *dst);
+int     ask_overwrite(struct file *old, struct file *new);
+void    copy_file(struct file *item);
+void    copy_dir(struct file *item);
+void    copy_link(struct file *item);
+off_t 	speed_avg(off_t spd);

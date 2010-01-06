@@ -1,14 +1,10 @@
 These are short notes for me, not intended to be clear for everyone.
 I will clean up all this when the project reaches a stable state.
 
- * symlinks
- * speed calculation per file?
+ * fix that include-mess
+ * wchar support
  * signal handling (delete incomplete on interrupt)
- * multithreading: worker-thread for copying, controller-thread that
-   sends periodic interrupts and generates progress output
  * free space check?
- * last but probably most important: DOCUMENTATION! (readme, proper
-   homepage, github-wiki, etc.)
 
 
 Known bugs:

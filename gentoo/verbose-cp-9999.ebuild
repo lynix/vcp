@@ -5,7 +5,7 @@ inherit git
 EAPI=2
 EGIT_REPO_URI="git@github.com:lynix/vcp.git"
 DESCRIPTION="cp with additional features like progress bars and error handling"
-HOMEPAGE="http://github.com/lynix/vcp"
+HOMEPAGE="http://lynix.github.com/vcp"
 LICENSE="GPL-3"
 
 KEYWORDS="~amd64 ~x86"

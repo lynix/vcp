@@ -16,35 +16,28 @@
  * along with vcp. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include "file.h"
+#ifndef _options_h
+#define _options_h
 
-#define LIST_START 5L
+#define BUFFS 1048576		/* 1MiB buffer for read() and write() 		*/
+#define BUFFM 10            /* buffer multiplier, see work_list()       */
+#define SPEED_N 5			/* speed middle calculation 				*/
+#define BAR_WIDTH 20		/* progress bar width (characters) 			*/
+#define MAX_SIZE_L 15		/* maximum length of size string, numbers 	*/
 
-typedef unsigned long ulong;
 
-struct flist {
-	ulong	count;
-    ulong   count_f;
-	ulong	arr_size;
-	off_t	size;
-    off_t   bytes_done;
-	struct file **items;
+struct options {
+	char bars;
+	char force;
+	char filenames;
+	char sync;
+	char delete;
+	char keep;
+	char quiet;
+	char update;
+	char verbose;
+    char pretend;
+	char debug;
+    char ignore_uid_err;
 };
-
-struct	flist *flist_init();
-struct  file *flist_search_src(struct flist *list, struct file *item);
-int		flist_add(struct flist *list, struct file *item);
-int     flist_shrink(struct flist *list);
-void    flist_sort_dst(struct flist *list);
-
-struct strlist {
-	ulong	count;
-	ulong 	arr_size;
-	char	**items;
-};
-
-struct	strlist *strlist_init();
-int		strlist_add(struct strlist *list, char *item);
+#endif

@@ -1,4 +1,4 @@
-/* Copyright lynix <lynix47@gmail.com>, 2009
+/* Copyright lynix <lynix47@gmail.com>, 2009, 2010
  * 
  * This file is part of vcp (verbose cp).
  *
@@ -20,926 +20,764 @@
 
 int main(int argc, char *argv[])
 {
-	int 	argstart;
-	
-	/* initialize options, set umask */
-	init_opts();
-	umask(0);
-	
-	/* parse cmdline options */
-	if ((argstart = parse_opts(argc, argv)) == -1) {
-		exit(EXIT_FAILURE);
-	}
-	if (argc < 3) {
-		print_error("insufficient arguments.\nTry -h for help.");
-		exit(EXIT_FAILURE);
-	}
-	
-	/* parse cmdline files, build list */
-	if (opts.verbose) {
-		printf("collecting file information...\n");
-		fflush(stdout);
-	}
-	if (build_list(argc, argstart, argv) != 0) {
-		print_error("failed to build file list, aborting.");
-		exit(EXIT_FAILURE);
-	}
-	if (opts.verbose) {
-		/* print summary */
-		printf("will now copy %lu file(s), %s\n\n", file_list->count, 
-				size_str(file_list->size));
-	}
-	if (opts.debug) {
-		/* print copy list */
-		for (long i=0; i<file_list->count; i++) {
-			printf("%s --> %s\n", file_list->items[i]->src,
-				file_list->items[i]->dst);
-		}
-		putchar('\n');
-		fflush(stdout);
-	}
-	
-	/* do the actual copy */
-	if (do_copy() != 0) {
-		print_error("copying failed");
-		free(file_list);
-		exit(EXIT_FAILURE);
-	}
-	free(file_list);
-	
-	exit(EXIT_SUCCESS);
+    int argstart;
+    
+    /* initialize options, set umask */
+    init_opts();
+    umask(0);
+    
+    /* parse cmdline options */
+    if ((argstart = parse_opts(argc, argv)) == -1) {
+        exit(EXIT_FAILURE);
+    }
+    if (argc < 3) {
+        print_error("insufficient arguments. Try -h for help.");
+        exit(EXIT_FAILURE);
+    }
+    
+    /* parse cmdline files, build list */
+    if (opts.debug) {
+        printf("Collecting file information...\n");
+        fflush(stdout);
+    }
+    if (build_list(argc, argstart, argv) != 0) {
+        print_error("failed to build file list, aborting.");
+        exit(EXIT_FAILURE);
+    }
+
+    /* evtl. print summary, exit if in pretend mode */
+    if (opts.verbose || opts.pretend) {
+        list_show();
+    }
+    if (opts.pretend) {
+        free(copy_list);
+        exit(EXIT_SUCCESS);
+    }
+    
+    /* work off the list */
+    if (work_list() != 0) {
+        free(copy_list);
+        exit(EXIT_FAILURE);
+    }
+    
+    free(copy_list);
+    exit(EXIT_SUCCESS);
 }
 
 int build_list(int argc, int start, char *argv[])
 {
-	struct file *f_dest;
-	char *item, *dest, *dest_dir, *dest_base;
-	
-	/* clean destination path */
-	dest_dir = malloc(strlen(argv[argc-1])+1);
-	dest_base = malloc(strlen(argv[argc-1])+1);
-	
-	strcpy(dest_dir, argv[argc-1]);
-	strcpy(dest_base, argv[argc-1]);
-	
-	dest_dir = dirname(dest_dir);
-	dest_base = basename(dest_base);
-	
-	dest_dir = realpath(dest_dir, NULL);
-	if ((dest_dir = realloc(dest_dir, strlen(dest_dir)+1)) == NULL) {
-		return -1;
-	}
-	
-	dest = path_str(dest_dir, dest_base);
-	
-	/* logic checking (do not copy file/dir over dir/file)				*/
-	if ((f_dest = f_get(dest)) != NULL) {
-		if (f_dest->type == RFILE) {
-			if ((argc-start-1) != 1) {
-				print_error("unable to copy multiple items to one file");
-				return -1;
-			}
-		}
-		free(f_dest);
-	} else {
-		errno = 0;
-		if ((argc-start-1) > 1) {
-			print_error("destination directory '%s' does not exist", 
-						argv[argc-1]);
-			return -1;
-		}
-	}
-	
-	/* create new lists */
-	if ((file_list = flist_init()) == NULL) {
-		print_debug("failed to create file list");
-		return -1;
-	}
-	if ((dir_list = flist_init()) == NULL) {
-		print_debug("failed to create dir list");
-		return -1;
-	}
-	
-	/* iterate through cmdline and insert items */
-	for (int i=start; i<(argc-1); i++) {
-		/* clean item path */
-		item = realpath(argv[i], NULL);
-		item = realloc(item, strlen(item)+1);
-		/* crawl item */
-		if (crawl_files(item, dest) != 0) {
-			free(file_list);
-			free(dir_list);
-			return -1;
-		}
-	}
-	
-	/* check if something left to copy at all */
-	if (file_list->count == 0 && dir_list->count == 0) {
-		printf("no items to copy.\n");
-		free(file_list);
-		free(dir_list);
-		exit(EXIT_SUCCESS);
-	}
-	
-	return 0;
-}
-
-int do_copy()
-{
-	/* works off the file lists and copies each item					*/
-	
-	time_t start;
-	ullong total_done;
-	int error;
-	struct strlist *failed;
-	struct file *item;
-	
-	time(&start);
-	total_done=0;
-	error=0;
-	
-	if ((failed = strlist_init()) == NULL) {
-		return -1;
-	}
-
-	/* create destination directory structure */
-	for (ulong i=0; i < dir_list->count; i++) {
-		if ((item = f_get(dir_list->items[i]->dst)) != NULL) {
-			free(item);
-		} else {
-			errno = 0;
-			if (mkdir(dir_list->items[i]->dst, dir_list->items[i]->mode)
-					!= 0) {
-				error_append(failed, dir_list->items[i]->dst,
-							"unable to create destination directory",
-							strerror(errno));
-			}
-		}
-	}
-
-	/* copy files */
-	for (ulong i=0; i < file_list->count; i++) {
-		item = file_list->items[i];
-		if (copy_file(item, file_list->count, file_list->size,
-				total_done,	start, failed) != 0) {
-			error = 1;
-		}
-		total_done += item->size;
-	}
-	
-	/* reverse-iterate through directories and set times, evtl. delete 	*/
-	if (!error && dir_list->count > 0) {
-		for (ulong i = (dir_list->count)-1; i >= 0; i--) {
-			if (clone_attrs(dir_list->items[i]) != 0) {
-				error = 1;
-				error_append(failed, dir_list->items[i]->src,
-				"unable to apply directory attributes", strerror(errno));
-			} else {
-				if (opts.delete) {
-					if (rmdir(dir_list->items[i]->src) != 0) {
-						error = 1;
-						error_append(failed, dir_list->items[i]->src,
-						 "unable to delete directory", strerror(errno));
-					}
-				}
-			}
-			if (i == 0) {
-				break;
-			}
-		}
-	}
-	
-	/* print list of failed items */
-	if (error) {
-		print_error("the following errors occured:");
-		for (ulong i=0; i < failed->count; i++) {
-			printf("   %s\n", failed->items[i]);
-		}
-		return -1;
-	}
-	
-	return 0;
-}
-
-int copy_file(struct file *f_src, ulong t_num, ullong t_size,
-			 ullong t_done, time_t t_start, struct strlist *failed)
-{
-	int 	fd_src, fd_dst, error, stats;
-	char 	*buffer, *dest;
-	long  	eta, buffsize, bytes_r, bytes_w;
-	ullong 	bytes_d;
-	struct 	file *f_dest;
-	struct	winsize ws;
-	double	t_perc, perc, spd;
-	time_t 	timer;
-	
-	/* check if destination exists */
-	dest = f_src->dst;
-	if ((f_dest = f_get(dest)) != NULL) {
-		free(f_dest);
-		/* remove, we know the user wants it from crawl_files()*/
-		if (remove(dest) != 0) {
-			error_append(failed, dest, "unable to delete existing file",
-						strerror(errno));
-			return -1;
-		}
-	} else {
-		errno = 0;
-	}
-	
-	/* open source (true, true ;) ) */
-	if ((fd_src = open64(f_src->src, O_RDONLY)) == -1) {
-		error_append(failed, f_src->src, "unable to open for reading",
-					strerror(errno));
-		return -1;
-	}
-	
-	/* open destination */
-	if ((fd_dst = open64(dest, O_CREAT|O_EXCL|O_WRONLY, (mode_t)0600)) == -1) {
-		error_append(failed, dest, "unable to open for writing",
-					strerror(errno));
-		close(fd_src);
-		return -1;
-	}
-	
-	/* set buffer size, allocate buffer */
-	if (f_src->size < BUFFS) {
-		buffsize = f_src->size;
-		stats = 0;
-	} else {
-		buffsize = BUFFS;
-		stats = 1;
-	}
-	if ((buffer = malloc(buffsize)) == NULL) {
-		print_error("failed to allocate %s for buffer",
-					size_str(buffsize));
-		error_append(failed, f_src->src, "failed allocating buffer", NULL);
-		close(fd_src);
-		close(fd_dst);
-		return -1;
-	}
-	
-	/* initialize counters */
-	bytes_d = 0;
-	bytes_r = 0;
-	bytes_w = 0;
-	error = 0;
-	time(&timer);
-
-	/* print source filename if not suppressed */
-	if (opts.filenames) {
-		printf("%s\n", f_src->src);
-	}
-	
-	/* the part you are looking for: read from source... */
-	while ((bytes_r = read(fd_src, buffer, buffsize))) {
-		if (bytes_r == -1) {
-			print_error("\rI/O error while reading: %s", strerror(errno));
-			error_append(failed, f_src->src, "I/O reading error",
-						strerror(errno));
-			error = 1;
-			break;
-		}
-		/* ... and write to destination */
-		bytes_w = write(fd_dst, buffer, bytes_r);
-		if (bytes_w != bytes_r) {
-			print_error("\rI/O error writing to '%s': %s", dest,
-						strerror(errno));
-			printf("read: %ld, written: %ld, fd_dst: %d, fd_src: %d\n", bytes_r, bytes_w, fd_dst, fd_src);
-			error_append(failed, f_src->src, "I/O writing error",
-						strerror(errno));
-			error = 1;
-			break;
-		}
-		
-		/* account written data */
-		bytes_d += (ullong)bytes_w;
-		t_done += (ullong)bytes_w;
-			
-		/* print beautiful progress information */
-		if (!opts.quiet && stats && (time(NULL) > timer)) {
-			time(&timer);
-			t_perc = (long double)t_done / t_size * 100;
-			perc = (long double)bytes_d / f_src->size * 100;
-			spd = speed(t_done / (time(NULL)-t_start));
-			eta = (t_size - t_done) / spd;
-			progress(t_perc, t_num, perc, spd,	eta, f_src->size);
-		}
-	}
-	/* clear progress information line for next filename*/
-	if (!opts.quiet && stats) {
-		putchar('\r');
-		ioctl(0, TIOCGWINSZ, &ws);
-		for (int n=0; n < ws.ws_col; n++) {
-			putchar(' ');
-		}
-		putchar('\r');
-	}
-
-	if (!error) {
-		/* fsync if requested */
-		if (opts.sync) {
-			if (fsync(fd_dst) != 0) {
-				error_append(failed, dest, "fsync failed",
-							strerror(errno));
-				error=1;
-			}
-		}
-	
-		/* clone attributes */
-		if (clone_attrs(f_src) != 0) {
-			error_append(failed, dest, "failed to apply attributes",
-						strerror(errno));
-			error = 1;
-		}
-
-		/* remove source if requested */
-		if (opts.delete && !error) {
-			if (remove(f_src->src) != 0) {
-				print_error("failed to remove '%s': %s", f_src->src,
-							strerror(errno));
-				error_append(failed, f_src->src, "failed removing file",
-							strerror(errno));
-				error = 1;
-			}
-		}
-	}
-	
-	/* remove incomplete transfers */
-	if (bytes_d != f_src->size) {
-		print_debug("transfer check negative, removing '%s'", dest);
-		if (remove(dest) != 0) {
-			error_append(failed, dest, "failed to remove broken destination",
-						strerror(errno));
-		}
-		error = 1;
-	}
-	
-	/* clean up */
-	free(buffer);
-	close(fd_src);
-	close(fd_dst);
-
-	
-	if (error) {
-		return -1;
-	}
-	
-	return 0;
-}
-
-int crawl_files(char *src, char *dest)
-{
-	/* recursively scans directory and adds files to transfer list		*/
-	
-	DIR *d_src;
-	struct dirent *dp_src;
-	struct file *f_src;
-	struct file *f_dest;
-	
-	/* check source access */
-	if ((f_src = f_get(src)) == NULL) {
-		print_error("failed to open '%s': %s", src, strerror(errno));
-		return -1;
-	}
-	
-	/* check source type */
-	if (f_src->type == RDIR) {
-		/* directory, check destination */
-		if ((f_dest = f_get(dest)) != NULL) {
-			if (f_dest->type == RFILE) {
-				print_error("unable to copy dir '%s' over file '%s'", src,
-							dest);
-				free(f_src);
-				free(f_dest);
-				return -1;
-			}
-			free(f_dest);
-			f_dest = NULL;
-			/* extend destination path */
-			dest = path_str(dest, f_src->filename);
-		} else {
-			errno = 0;
-		}
-		/* check destination again (eventually new path) */
-		if ((f_dest = f_get(dest)) == NULL) {
-			errno = 0;
-			/* destination directory does not exist, create it */
-			f_src->dst = dest;
-			if (flist_add(dir_list, f_src) != 0) {
-				print_debug("failed to add '%s' to dir list", src);
-				return -1;
-			}
-		} else {
-			/* destinatio exists, check type */
-			if (f_dest->type == RFILE) {
-				print_error("unable to copy dir '%s' over file '%s'", src,
-							dest);
-				free(f_src);
-				free(f_dest);
-				return -1;
-			}
-			f_src->dst = dest;
-			if (flist_add(dir_list, f_src) != 0) {
-				print_debug("failed to add '%s' to dir list", src);
-				return -1;
-			}
-		}
-		/* crawl source directory */
-		if ((d_src = opendir(src)) == NULL) {
-			print_error("failed to open directory '%s': %s", src,
-						strerror(errno));
-			return -1;
-		}
-		while ((dp_src = readdir(d_src)) != NULL) {
-			/* IMPORTANT: skip references to . and .. */
-			if (strcmp(dp_src->d_name, "..") == 0 || 
-					strcmp(dp_src->d_name, ".") == 0) {
-				continue;
-			}
-			/* recursively crawl directory contents */
-			if (crawl_files(path_str(src, dp_src->d_name), path_str(dest, dp_src->d_name)) 
-					!= 0) {
-				return -1;
-			}
-		}
-		closedir(d_src);
-	} else {
-		/* file, check destination */
-		if ((f_dest = f_get(dest)) != NULL) {
-			if (f_dest->type == RDIR) {
-				dest = path_str(dest, f_src->filename);
-			}
-			free(f_dest);
-			f_dest = NULL;
-			/* check destination again (pot. new path) */
-			if ((f_dest = f_get(dest)) != NULL) {
-				if (f_dest->type == RDIR) {
-					print_error("unable to replace dir '%s' with file '%s'", 
-								dest, src);
-					return -1;
-				} else {
-					errno = 0;
-				}
-				/* decide whether to skip/overwrite */
-				if (!opts.force) {
-					if (opts.keep) {
-						return 0;
-					} else if (opts.update) {
-						if (f_equal(f_src, f_dest)) {
-							if (opts.delete) {
-								if (remove(f_src->src) != 0) {
-									print_error("unable to delete '%s': %s\n",
-										f_src->src, strerror(errno));
-								}
-							}
-							return 0;
-						}
-					} else if (ask_overwrite(f_src->filename, size_str(
-								f_src->size), f_dest->filename, size_str(
-								f_dest->size)) == 'n') {
-						return 0;
-					}
-				}
-			}
-		} else {
-			errno = 0;
-			/* destination not existing, check if to be created */
-			while (flist_search(dir_list, dest)) {
-				/* will be created, extend path */
-				dest = path_str(dest, f_src->filename);
-			}
-		}
-		/* finally add file to file list */
-		f_src->dst = dest;
-		if (flist_add(file_list, f_src) != 0) {
-			print_debug("failed to add '%s' to file list", src);
-			return -1;
-		}
-	}
-	
-	return 0;
-}
-
-void progress(double t_perc, ulong t_num, double perc, ulong bps,
-			 long eta, ullong fsize)
-{
-	int eta_s, eta_m, eta_h;
-	
-	/* split ETA */
-	eta_s = eta % 60;
-	eta_m = (eta % 3600) / 60;
-	eta_h = eta / 3600;
-	if (eta_h > 99) {
-		eta_h = 99;
-	}
-	
-	/* select style (single/multi) and finally print */
-	if (t_num > 1) {
-		if (opts.bars) {
-			printf("\rFile: %3.0f%% %s   Total: %3.0f%% %s  ETA %02d:%02d:%02d   ",
-				perc, prog_bar(perc), t_perc, prog_bar(t_perc), eta_h, eta_m, eta_s);
-		} else {
-			printf("\rFile: %3.0f%% of %s | Total: %3.0f%% @ %s/s ETA %02d:%02d:%02d   ",
-				perc, size_str(fsize), t_perc, size_str(bps), eta_h, eta_m, eta_s);
-		}
-	} else {
-		if (opts.bars) {
-			printf("\r%3.0f%%  %s  ETA %02d:%02d:%02d  ", perc, prog_bar(perc),
-				eta_h, eta_m, eta_s);
-		} else {
-			printf("\r%3.0f%% of %s @ %s/s ETA %02d:%02d:%02d   ", perc,
-				size_str(fsize), size_str(bps), eta_h, eta_m, eta_s);
-		}
-	}
-	fflush(stdout);
-	
-	return;
-}
-
-void print_error(char *msg, ...)
-{
-	/* prints an error message to stderr								*/
-	va_list argpointer;
-	
-	va_start(argpointer, msg);
-	fprintf(stderr, "Error: ");
-	vfprintf(stderr, msg, argpointer);
-	fprintf(stderr, "\n");
-	fflush(stderr);
-	
-	return;
-}
-
-void print_debug(char *msg, ...)
-{
-	/* prints debugging messages to stderr if debug is set				*/
-	va_list argpointer;
-	
-	if (opts.debug) {
-		va_start(argpointer, msg);
-		fprintf(stderr, "Debug: ");
-		vfprintf(stderr, msg, argpointer);
-		fprintf(stderr, "\n");
-		fflush(stderr);
-	}
-	
-	return;
-}
-
-char ask_overwrite(char *old, char *old_size, char *new, char *new_size)
-{
-	/* prints a confirmation dialog for file overwriting				*/
-	
-	char answer;
-	
-	do {
-		printf("overwrite %s (%s) with %s (%s) (Y/n)? ", old, 
-				old_size, new, new_size);
-		fflush(stdout);
-		answer = getchar();
-		if (answer != '\n') {
-			while (getchar() != '\n') {
-				/* ignore additional chars */
-			}
-		}
-	} while (answer != 'Y' && answer != 'y' && answer != 'n' &&
-				answer != '\n');
-	
-	if (answer == '\n' || answer == 'Y') {
-		answer = 'y';
-	}
-		
-	return answer;
-}
-
-int clone_attrs(struct file *src)
-{
-	/* applies the attributes of a given file to another				*/
-	
-	int retval=0;
-	
-	/* set owner uid/gid */
-	if (chown(src->dst, src->uid, src->gid) != 0) {
-		print_debug("failed to set uid/gid");
-		retval = -1;
-	}
-	/* set mode */
-	if (chmod(src->dst, src->mode) != 0) {
-		print_debug("failed to set mode");
-		retval = -1;
-	}
-	/* set atime/mtime */
-	if (utime(src->dst, &(src->times)) != 0) {
-		print_debug("failed to set atime/mtime");
-		retval = -1;
-	}
-	
-	return retval;
-}
-	
-void print_usage()
-{
-	/* prints copyright and usage information							*/
-	
-	printf("vcp  Copyright (C) 2009  lynix <lynix47@gmail.com>\n\n");
-	
-    printf("This program comes with ABSOLUTELY NO WARRANTY, use at\n");
-    printf("own risk. This is free software, and you are welcome to\n");
-    printf("redistribute it under the terms of the GNU General\n");
-    printf("Public License as published by the Free Software\n");
-    printf("Foundation, either version 3 of the License, or (at your\n");
-    printf("option) any later version.\n\n");
+    int     argfcount;
+    struct  file *f_item, *f_item2;
+    char    *dest, *dest_dir, *dest_base, *item;
     
-	printf("Usage:	vcp [OPTIONS] SOURCE(S) DESTINATION\n");
-	printf("\n");
-	printf("Behaviour:\n");
-	printf("  -d  delete source(s) on success\n");
-	printf("  -f  overwrite existing files (default: ask)\n");
-	printf("  -k  skip all existing files (default: ask)\n");
-	printf("  -u  skip identical existing files\n");
-	printf("  -s  ensure each file is synched to disk after write\n");
-	printf("Output control:\n");
-	printf("  -b  display progress bars (default: text)\n");
-	printf("  -B  display progress bars only, no filenames\n");
-	printf("  -q  do not print progress indicators\n");
-	printf("  -Q  do not print progress indicators nor filenames\n");
-	printf("General options:\n");
-	printf("  -h  print usage and license information\n");
-	printf("  -v  be verbose\n");
-	printf("  -D  print debugging messages\n");
-	printf("\n");
-	printf("This version of vcp was built on %s %s.\n", __DATE__,
-			__TIME__);
-	
-	return;
+    /* clean destination path */
+    dest_dir = malloc(strlen(argv[argc-1])+1);
+    dest_base = malloc(strlen(argv[argc-1])+1);
+    strcpy(dest_dir, argv[argc-1]);
+    strcpy(dest_base, argv[argc-1]);
+    dest_dir = dirname(dest_dir);
+    dest_base = basename(dest_base);
+    dest_dir = realpath(dest_dir, NULL);
+    if ((dest_dir = realloc(dest_dir, strlen(dest_dir)+1)) == NULL) {
+        return -1;
+    }
+    dest = path_str(dest_dir, dest_base);
+    
+    /* logic checking (do not copy file/dir over dir/file) */
+    argfcount = argc-start-1;
+    if ((f_item = f_get(dest)) != NULL) {
+        if (f_item->type == RFILE) {
+            if (argfcount != 1) {
+                print_error("unable to copy multiple items to one file");
+                return -1;
+            }
+        }
+        free(f_item);
+    } else {
+        errno = 0;
+        if (argfcount > 1) {
+            print_error("destination directory '%s' does not exist", 
+                        dest);
+            return -1;
+        }
+    }
+    
+    /* create copy list */
+    if ((copy_list = flist_init()) == NULL) {
+        print_debug("failed to create copy list");
+        return -1;
+    }
+    
+    /* iterate through cmdline and insert items */
+    if ((argfcount == 1) && (f_item == NULL || f_item->type == RFILE)) {
+        item = realpath(argv[start], NULL);
+        item = realloc(item, strlen(item)+1);
+        if (crawl(item, dest) != 0) {
+            free(copy_list);
+            return -1;
+        }
+    } else {
+        for (int i=start; i<start+argfcount; i++) {
+            /* clean item path */
+            item = realpath(argv[i], NULL);
+            item = realloc(item, strlen(item)+1);
+            /* crawl item */
+            if (crawl(item, path_str(dest, basename(item))) != 0) {
+                free(copy_list);
+                return -1;
+            }
+        }
+    }
+
+    /* update symlinks if linked file is to be copied */
+    for (ulong i=0; i<copy_list->count; i++) {
+        f_item = copy_list->items[i];
+        if (f_item->type != SLINK) {
+            continue;
+        }
+        if ((f_item2 = flist_search_src(copy_list, f_item)) != NULL) {
+            f_item->src = f_item2->dst;
+        }
+    }
+    
+    /* check if something left to copy at all */
+    if (copy_list->count == 0) {
+        printf("vcp: no items to copy.\n");
+        free(copy_list);
+        exit(EXIT_SUCCESS);
+    }
+
+    /* finally sort list by destination */
+    flist_sort_dst(copy_list);
+    
+    return 0;
+}
+
+void list_show()
+{
+    struct file *item;
+    off_t  size;
+    ulong  count;
+    char   mark;
+
+    mark = 0;
+    size = 0;
+    count = 0;
+    
+    for (ulong i=0; i<copy_list->count; i++) {
+        item = copy_list->items[i];
+        if (item->done && !opts.delete) {
+            continue;
+        }
+        if (item->type == RFILE) {
+            printf(" [F] ");
+            count++;
+            size += item->size;
+        } else if (item->type == RDIR) {
+            printf(" [D] ");
+        } else if (item->type == SLINK) {
+            printf(" [S] ");
+        }
+        printf("%s --> %s", item->src, item->dst);
+        if (item->done) {
+            mark = 1;
+            printf("(*)");
+        } else if (item->type == RFILE) {
+            printf(" (%s)", size_str(item->size));
+        }
+        putchar('\n');
+    }
+    putchar('\n');
+    if (mark) {
+        printf("(*) marked items already exist at their destination\n");
+        printf("    and do not count for transfer size.\n\n");
+    }
+    printf("Total transfer size: %lu file(s), %s\n\n", count,
+            size_str(size));
+    fflush(stdout);
+
+    return;
+}
+
+int crawl(char *src, char *dst)
+{
+    /* recursively scans directory and adds files to transfer list        */
+    
+    DIR    *src_dir;
+    struct dirent *src_dirp;
+    struct file *f_src;
+    struct file *f_dst;
+    
+    /* check source access, prepare file struct */
+    if ((f_src = f_get(src)) == NULL) {
+        print_error("failed to open '%s': %s", src, strerror(errno));
+        return -1;
+    }
+    f_src->dst = dst;
+
+    /* collision handling */
+    if ((f_dst = f_get(dst)) != NULL) {
+        if (f_src->type != RDIR && f_dst->type != RDIR) {
+            if (opts.keep) {
+                f_src->done = 1;
+            } else if (opts.update && f_equal(f_src, f_dst)) {
+                f_src->done = 1;
+            } else if (!opts.force) {
+                if (!ask_overwrite(f_dst, f_src)) {
+                    f_src->done = 1;
+                }
+            }
+        } else if (f_src->type == RDIR && f_dst->type == RDIR) {
+            f_src->done = 1;
+        } else {
+            print_error("%s: type mismatch (file/dir -> dir/file)",
+                        dst);
+        }
+    }
+
+    /* add to copy list */
+    if (flist_add(copy_list, f_src) != 0) {
+        print_error("unable to add to copy list");
+        return -1;
+    }
+
+    /* crawl contents if src is a directory */
+    if (f_src != NULL) {
+        if (f_src->type == RDIR) {
+            if ((src_dir = opendir(src)) == NULL) {
+                print_error("failed to open directory '%s': %s", src,
+                            strerror(errno));
+                return -1;
+            }
+            while ((src_dirp = readdir(src_dir)) != NULL) {
+                /* IMPORTANT: skip references to . and .. */
+                if (strcmp(src_dirp->d_name, "..") == 0 || 
+                    strcmp(src_dirp->d_name, ".") == 0) {
+                    continue;
+                }
+                /* recursively crawl directory contents */
+                if (crawl(path_str(src, src_dirp->d_name),
+                        path_str(dst, src_dirp->d_name)) != 0) {
+                    return -1;
+                }
+            }
+            closedir(src_dir);
+        }
+    }
+
+    return 0;
+}
+
+int work_list()
+{
+    /* works off the file list and copies each item                        */
+
+    struct file *item;
+    char *tempstr;
+
+    /* initialize fail-list */
+    if ((fail_list = strlist_init()) == NULL) {
+        print_error("failed to create fail_list");
+        return -1;
+    }
+
+    /* work off the list */
+    for (ulong i=0; i < copy_list->count; i++) {
+        item = copy_list->items[i];
+        /* skip symlinks and existing items */
+        if (item->done == 1 || item->type == SLINK) {
+            continue;
+        }
+        if (opts.filenames) {
+            printf("%s\n", item->src);
+        }
+        /* directories */
+        if (item->type == RDIR) {
+            copy_dir(item);
+            continue;
+        }
+        /* files */
+        if (item->type == RFILE) {
+            copy_file(item);
+            continue;
+        }
+    }
+
+    /* create symlinks */
+    for (ulong i=0; i < copy_list->count; i++) {
+        item = copy_list->items[i];
+        if (item->type == SLINK && item->done == 0) {
+            copy_link(item);
+        }
+    }
+    
+    /* reverse re-iterate: update directory-attrs, evtl. delete items */
+    for (ulong i=copy_list->count-1; i <= 0; i--) {
+        item = copy_list->items[i];
+        if (item->done != 1) {
+            continue;
+        }
+        if (item->type == RDIR) {
+            if (f_clone_attrs(item) != 0) {
+                if (!opts.ignore_uid_err) {
+                    fail_append(item->dst, "unable to set attributes");
+                    item->done = 0;
+                    continue;
+                }
+            }
+        }
+        if (opts.delete) {
+            if (item->type == SLINK) {
+                tempstr = item->dst;
+            } else {
+                tempstr = item->src;
+            }
+            if (remove(tempstr) != 0) {
+                fail_append(tempstr, "unable to delete");
+                item->done = 0;
+            }
+        }
+    }
+    
+    /* print list of failed items */
+    if (fail_list->count > 0) {
+        print_error("the following errors occured:");
+        for (ulong i=0; i < fail_list->count; i++) {
+            printf("   %s\n", fail_list->items[i]);
+        }
+        return -1;
+    }
+    
+    return 0;
+}
+
+void *do_copy(void *p)
+{
+    int   src, dst;
+    char  *buffer;
+    long  buffsize, bytes_r, bytes_w;
+    struct file *item;
+
+    item = (struct file *)p;
+    
+    /* open source (true, true ;)) */
+    if ((src = open(item->src, O_RDONLY)) == -1) {
+        fail_append(item->src, "unable to open for reading");
+        return NULL;
+    }
+    
+    /* open destination */
+    if ((dst = open(item->dst, O_CREAT|O_WRONLY, (mode_t)0600))
+                        == -1) {
+        fail_append(item->dst, "unable to open for writing");
+        close(src);
+        return NULL;
+    }
+    
+    /* set buffer size, allocate buffer */
+    buffsize = (item->size > BUFFS) ? BUFFS : item->size;
+    if ((buffer = malloc(buffsize)) == NULL) {
+        print_error("failed to allocate %s for buffer",
+                    size_str(buffsize));
+        fail_append(item->src, "failed to allocate buffer");
+        close(src);
+        close(dst);
+        return NULL;
+    }
+    
+    /* initialize counters */
+    bytes_r = 0;
+    bytes_w = 0;
+
+    /* the part you are looking for: read from source... */
+    while ((bytes_r = read(src, buffer, buffsize))) {
+        if (bytes_r == -1) {
+            fail_append(item->src, "I/O error while reading");
+            break;
+        }
+        /* ... and write to destination */
+        bytes_w = write(dst, buffer, bytes_r);
+        if (bytes_w != bytes_r) {
+            fail_append(item->src, "I/O error while writing");
+            break;
+        }
+        /* account written data, thread-safe */
+        pthread_mutex_lock(&file_bytes_lock);
+        file_bytes_done += (off_t)bytes_w;
+        pthread_mutex_unlock(&file_bytes_lock);
+    }
+
+    /* check result */
+    if (file_bytes_done == item->size) {
+        /* mark as done */
+        item->done = 1;
+        /* fsync if requested */
+        if (opts.sync) {
+            if (fsync(dst) != 0) {
+                fail_append(item->dst, "fsync failed");
+                item->done = 0;
+            }
+        }
+        
+        /* clone attributes */
+        if (f_clone_attrs(item) != 0) {
+            if (!opts.ignore_uid_err) {
+                fail_append(item->dst, "failed to apply attributes");
+                item->done = 0;
+            }
+        }
+    } else {
+        /* remove incomplete transfers */
+        if (remove(item->dst) != 0) {
+            fail_append(item->dst, "failed to remove corrupt dest");
+        }
+    }
+    
+    /* clean up */
+    free(buffer);
+    close(dst);
+    close(src);
+
+    return NULL;
+}
+
+void *progress(void *p)
+{
+    struct file *item;
+    time_t start, now, elapsed;
+    char perc_t, perc_f, *speed;
+    off_t bytes_per_sec, bytes_written;
+    int remaining_s;
+    char eta_h, eta_m, eta_s;
+
+    item = (struct file *)p;
+    perc_t = (float)copy_list->bytes_done / copy_list->size * 100;
+    bytes_written = 0;
+    time(&start);
+
+    /* initial output */
+    if (copy_list->count_f > 1) {
+        if (opts.bars) {
+            print_progr_bm(0, perc_t, "0b", 0, 0, 0);
+        } else {
+            print_progr_pm(0, perc_t, size_str(item->size),
+                           size_str(copy_list->size), "0b", 0, 0, 0);
+        }
+    } else {
+        if (opts.bars) {
+            print_progr_bs(0, "0b", 0, 0, 0);
+        } else {
+            print_progr_ps(0, size_str(item->size), "0b", 0, 0, 0);
+        }
+    }
+
+    /* wait for worker thread to start copying */
+    while (!file_done_flag) {
+        sleep(1);
+        pthread_mutex_lock(&file_bytes_lock);
+        bytes_written = file_bytes_done;
+        pthread_mutex_unlock(&file_bytes_lock);
+        if (bytes_written > 0) {
+            break;
+        }
+    }
+    
+    while (!file_done_flag) {
+        /* get written bytes, calculate speed */
+        pthread_mutex_lock(&file_bytes_lock);
+        bytes_written = file_bytes_done;
+        time(&now);
+        pthread_mutex_unlock(&file_bytes_lock);
+        elapsed = now - start;
+        if (elapsed <= 0) {
+            elapsed = 1;
+        }
+        bytes_per_sec = (float)bytes_written / elapsed;
+        speed = size_str(bytes_per_sec);
+        /* calculate percentage, ETA */
+        perc_f = (float)bytes_written / item->size * 100;
+        perc_t = (float)(copy_list->bytes_done + bytes_written) /
+                 copy_list->size * 100;
+        remaining_s = (copy_list->size - (copy_list->bytes_done +
+                      bytes_written)) / bytes_per_sec;
+        eta_s = remaining_s % 60;
+        eta_m = (remaining_s % 3600) / 60;
+        eta_h = remaining_s / 3600;
+        if (eta_h > 99 || eta_h < 0) {
+            eta_h = 99;
+        }
+        /* print beautiful progress information */
+        if (copy_list->count_f > 1) {
+            if (opts.bars) {
+                print_progr_bm(perc_f, perc_t, speed, eta_s, eta_m, eta_h);
+            } else {
+                print_progr_pm(perc_f, perc_t, size_str(item->size),
+                               size_str(copy_list->size), speed, eta_s, eta_m, eta_h);
+            }
+        } else {
+            if (opts.bars) {
+                print_progr_bs(perc_f, speed, eta_s, eta_m, eta_h);
+            } else {
+                print_progr_ps(perc_f, size_str(item->size), speed, eta_s, eta_m, eta_h);
+            }
+        }
+        fflush(stdout);
+        /* check termination */
+        if (file_done_flag != 0) {
+            break;
+        }
+        sleep(1);
+    }
+
+    //TODO: clear whole terminal line
+    putchar('\r');
+    putchar('\n');
+    
+    return NULL;
+}
+
+int ask_overwrite(struct file *old, struct file *new)
+{
+    /* prints a confirmation dialog for file overwriting                */
+    
+    char answer;
+    
+    do {
+        printf("overwrite ");
+        if (old->type != SLINK) {
+            printf("%s (%s)", old->src, size_str(old->size));
+        } else {
+            printf("%s (symlink to %s)", old->dst, old->src);
+        }
+        printf(" with ");
+        if (new->type != SLINK) {
+            printf("%s (%s)", new->src, size_str(new->size));
+        } else {
+            printf(" symlink to %s", new->src);
+        }
+        printf(" (Y/n)? ");
+        fflush(stdout);
+        
+        answer = getchar();
+        if (answer != '\n') {
+            while (getchar() != '\n') {
+                /* ignore additional chars */
+            }
+        }
+    } while (answer != 'Y' && answer != 'y' && answer != 'n' &&
+                answer != '\n');
+    
+    if (answer == '\n' || answer == 'Y' || answer == 'y') {
+        return 1;
+    }
+        
+    return 0;
 }
 
 void init_opts()
 {
-	/* initializes the global options structure							*/
-	
-	opts.bars = 0;
-	opts.force = 0;
-	opts.filenames = 1;
-	opts.sync = 0;
-	opts.delete = 0;
-	opts.keep = 0;
-	opts.quiet = 0;
-	opts.verbose = 0;
-	opts.update = 0;
-	opts.debug = 0;
+    /* initializes the global options structure                            */
+    
+    opts.bars = 0;
+    opts.force = 0;
+    opts.filenames = 1;
+    opts.sync = 0;
+    opts.delete = 0;
+    opts.keep = 0;
+    opts.quiet = 0;
+    opts.verbose = 0;
+    opts.update = 0;
+    opts.pretend = 0;
+    opts.debug = 0;
+    opts.ignore_uid_err = 0;
 
-	return;
+    return;
 }
 
 int parse_opts(int argc, char *argv[])
 {
-	/* parses command-line options and update opts structure			*/
-	
-	char c;
+    /* parses command-line options and update opts structure            */
+    
+    char c;
     extern int optind, optopt, opterr;
     
     opterr = 0;
-	
-	while ((c = getopt(argc, argv, "bdfhkqsluvDBQ")) != -1) {
-		switch (c) {
-			case 'b':
-				opts.bars = 1;
-				break;
-			case 'B':
-				opts.bars = 1;
-				opts.filenames = 0;
-				break;
-			case 'f':
-				if (opts.keep == 0) {
-					opts.force = 1;
-				} else {
-					print_error("no -f and -k at the same time\n");
-					return -1;
-				}
-				break;
-			case 'k':
-				if (opts.force == 0) {
-					opts.keep = 1;
-				} else {
-					print_error("no -f and -k at the same time\n");
-					return -1;
-				}
-				break;
-			case 's':
-				opts.sync = 1;
-				break;
-			case 'q':
-				opts.quiet = 1;
-				break;
-			case 'Q':
-				opts.quiet = 1;
-				opts.filenames = 0;
-				break;
-			case 'd':
-				opts.delete = 1;
-				break;
-			case 'h':
-				print_usage();
-				exit(EXIT_SUCCESS);
-			case 'l':
-				print_limits();
-				exit(EXIT_SUCCESS);
-			case 'u':
-				opts.update = 1;
-				break;
-			case 'v':
-				opts.verbose = 1;
-				break;
-			case 'D':
-				opts.debug = 1;
-				break;
-			case '?':
-				if (isprint(optopt)) {
-					print_error("unknown option \"-%c\".\nTry -h for help.",
-								optopt);
-				} else {
-					print_error("unknown option character \"\\x%x\".\nTry -h for help.",
-								optopt);
-				}
-				return -1;
-			default:
-				return -1;
-		}
-	}
-		  
-	return optind;
+    
+    while ((c = getopt(argc, argv, "bdfhkpqstuvDBQ")) != -1) {
+        switch (c) {
+            case 'b':
+                opts.bars = 1;
+                break;
+            case 'B':
+                opts.bars = 1;
+                opts.filenames = 0;
+                break;
+            case 'f':
+                if (opts.keep == 0) {
+                    opts.force = 1;
+                } else {
+                    print_error("no -f and -k at the same time\n");
+                    return -1;
+                }
+                break;
+            case 'k':
+                if (opts.force == 0) {
+                    opts.keep = 1;
+                } else {
+                    print_error("no -f and -k at the same time\n");
+                    return -1;
+                }
+                break;
+            case 's':
+                opts.sync = 1;
+                break;
+            case 't':
+                opts.ignore_uid_err = 1;
+                break;
+            case 'p':
+                opts.pretend = 1;
+                break;
+            case 'q':
+                opts.quiet = 1;
+                break;
+            case 'Q':
+                opts.quiet = 1;
+                opts.filenames = 0;
+                break;
+            case 'd':
+                opts.delete = 1;
+                break;
+            case 'h':
+                print_usage();
+                exit(EXIT_SUCCESS);
+            case 'u':
+                opts.update = 1;
+                break;
+            case 'v':
+                opts.verbose = 1;
+                break;
+            case 'D':
+                opts.debug = 1;
+                break;
+            case '?':
+                if (isprint(optopt)) {
+                    print_error("unknown option \"-%c\".\nTry -h for help.",
+                                optopt);
+                } else {
+                    print_error("unknown option character \"\\x%x\".\nTry -h for help.",
+                                optopt);
+                }
+                return -1;
+            default:
+                return -1;
+        }
+    }
+          
+    return optind;
 }
 
-char *strccat(char *a, char *b)
+off_t speed_avg(off_t spd)
 {
-	/* like strcat() but does not overwrite first argument and takes	*
-	 * care of sufficient destination size								*/
-	
-	char *retval;
-	int n,m;
-	
-	if (a == NULL && b == NULL) {
-		return NULL;
-	}
-	
-	if (a == NULL) {
-		n = 0;
-	} else {
-		n = strlen(a);
-	}
-	if (b == NULL) {
-		m = 0;
-	} else {
-		m = strlen(b);
-	}
-		
-	if ((retval = malloc(n+m+1)) == NULL) {
-		return NULL;
-	}
-	for (int i=0; i<n; i++) {
-		retval[i] = a[i];
-	}
-	for (int i=0; i<m; i++) {
-		retval[i+n] = b[i];
-	}	
-	retval[n+m] = '\0';
-
-	return retval;
+    /* takes new current speed, adds it to the global array and            *
+     * calculates the arithmetic average                                */
+    
+    /*ulong sum=0;
+    
+    for (int i=0; i<SPEED_N-1; i++) {
+        speeds[i] = speeds[i+1];
+        sum += speeds[i];
+    }
+    speeds[SPEED_N-1] = spd;
+    sum += spd;
+    
+    return sum / SPEED_N;*/
+    return 0;
 }
 
-char *path_str(char *path, char *sub)
+void fail_append(char *fname, char *error)
 {
-	/* builds a path string with separating '/' 						*/
-	
-	char *retval;
+    char *errmsg;
 
-	if (path[strlen(path)-1] != '/') {
-		retval = strccat(path, "/");
-	} else {
-		retval = path;
-	}
-	retval = strccat(retval, sub);
-	
-	return retval;
+    errmsg = strccat(fname, ": ");
+    errmsg = strccat(errmsg, error);
+    if (errno != 0) {
+        errmsg = strccat(errmsg, " (");
+        errmsg = strccat(errmsg, strerror(errno));
+        errmsg = strccat(errmsg, ")");
+    }
+    
+    if (strlist_add(fail_list, errmsg) != 0) {
+        print_debug("failed to add to fail-list:");
+        print_error(errmsg);
+    }
+
+    return;
 }
 
-char *size_str(ullong bytes)
+void copy_dir(struct file *item)
 {
-	/* generates human readable size information; we stick to the 'new'	*
-	 * IEC standard, see http://en.wikipedia.org/wiki/Binary_prefix		*/
-	
-	char *retval, *unit, *buffer;
-	double number;
-	
-	buffer = malloc(MAX_SIZE_L);
-	
-	if (bytes >= 1073741824) {
-		unit = "GiB";
-		number = (double)bytes / 1073741824;
-	} else if (bytes >= 1048576) {
-		unit = "MiB";
-		number = (double)bytes / 1048576;
-	} else if (bytes >= 1024) {
-		unit = "KiB";
-		number = (double)bytes / 1024;
-	} else {
-		unit = "B";
-		number = (double)bytes;
-	}
-	
-	sprintf(buffer, "%.2f ", number);
-	retval = strccat(buffer, unit);
-	free(buffer);
-	
-	return retval;
+    if (mkdir(item->dst, item->mode) != 0) {
+        fail_append(item->dst, "unable to create directory");
+        item->done = 0;
+    } else {
+        item->done = 1;
+    }
+
+    return;
 }
 
-ulong speed(ulong spd)
+void copy_file(struct file *item)
 {
-	/* takes new current speed, adds it to the global array and			*
-	 * calculates the arithmetic average								*/
-	
-	ullong sum=0;
-	
-	for (int i=0; i<SPEED_N-1; i++) {
-		speeds[i] = speeds[i+1];
-		sum += speeds[i];
-	}
-	speeds[SPEED_N-1] = spd;
-	sum += spd;
-	
-	return sum / SPEED_N;
+    pthread_t copy_thread, progr_thread;
+    char join_progr;
+
+    /* initialize mutex */
+    if (pthread_mutex_init(&file_bytes_lock, NULL) != 0) {
+        fail_append(item->dst, "failed to initialize bytes_done mutex");
+        return;
+    }
+
+    file_bytes_done = 0;
+    file_done_flag = 0;
+    join_progr = 0;
+    
+    if (pthread_create(&copy_thread, NULL, do_copy, item) != 0) {
+        fail_append(item->dst, "unable to spawn copy-thread");
+        return;
+    }
+    if (!opts.quiet && item->size > BUFFS*BUFFM) {
+        if (pthread_create(&progr_thread, NULL, progress, item) != 0) {
+            print_error("unable to spawn progress-thread (quiet copy)");
+        } else {
+            join_progr = 1;
+        }
+    }
+    pthread_join(copy_thread, NULL);
+    if (join_progr) {
+        /* signal progress thread */
+        file_done_flag = 1;
+        pthread_join(progr_thread, NULL);
+    }
+    /* account global progress */
+    copy_list->bytes_done += item->size;
+
+    /* clean up */
+    pthread_mutex_destroy(&file_bytes_lock);
 }
 
-void error_append(struct strlist *list, char *fname, char *error,
-				 char *reason)
+void copy_link(struct file *item)
 {
-	char *errmsg;
-
-	errmsg = strccat(fname, ": ");
-	errmsg = strccat(errmsg, error);
-	if (reason != NULL) {
-		errmsg = strccat(errmsg, " (");
-		errmsg = strccat(errmsg, reason);
-		errmsg = strccat(errmsg, ")");
-	}
-	
-	if (strlist_add(list, errmsg) != 0) {
-		print_debug("failed to add to failed list:");
-		print_error(errmsg);
-	}
-
-	return;
-}
-
-char *prog_bar(double percent)
-{
-	/* returns a progress bar as string									*/
-
-	#define BAR_STEP 100.0/(BAR_WIDTH-2)
-
-	char *retval;
-	double temp;
-	short i;
-
-	if ((retval = malloc(BAR_WIDTH+1)) == NULL) {
-		return NULL;
-	}
-	retval[0] = '[';
-	retval[BAR_WIDTH-1] = ']';
-	retval[BAR_WIDTH] = '\0';
-
-	i = 1;
-	temp = BAR_STEP;
-	while ((temp <= percent) && (i < BAR_WIDTH-1)) {
-		retval[i] = '#';
-		i++;
-		temp += BAR_STEP;
-	}
-	while (i < BAR_WIDTH-1) {
-		retval[i] = '-';
-		i++;
-	}
-
-	return retval;
-}
-
-void print_limits()
-{
-	/* prints size, count and speed limits								*/
-	
-	ullong max_ull;
-	ulong  max_ulong;
-
-	max_ull = 0;
-	max_ulong = 0;
-	
-	printf("Limits (on this architecture):\n\n");
-	printf(" - number of files         %lu\n", --max_ulong);
-	printf(" - speed                   %s/s\n", size_str(max_ulong));
-    printf(" - total size / file size  %s\n", size_str(--max_ull));
-	
-	return;
+    /* remove evtl. existing one */
+    if (f_exists(item->dst)) {
+        if (remove(item->dst) != 0) {
+            fail_append(item->dst, "unable to delete link");
+        }
+    }
+    /* create new link */
+    if (symlink(item->src, item->dst) != 0) {
+        fail_append(item->dst, "unable to create symlink");
+        item->done = 0;
+    } else {
+        item->done = 1;
+    }
 }
