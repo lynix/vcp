@@ -1,4 +1,6 @@
-2010-01-XX  Almost a rewrite, so lots of things changed. The big ones:
+2010-01-18	Added O_TRUNC to open bitmask.
+
+2010-01-06  Almost a rewrite, so lots of things changed. The big ones:
 
              Put all helper functions in a separate file, as well as
              the main options.

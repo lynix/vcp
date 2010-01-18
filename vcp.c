@@ -367,7 +367,7 @@ void *do_copy(void *p)
     }
     
     /* open destination */
-    if ((dst = open(item->dst, O_CREAT|O_WRONLY, (mode_t)0600))
+    if ((dst = open(item->dst, O_CREAT|O_WRONLY|O_TRUNC, (mode_t)0600))
                         == -1) {
         fail_append(item->dst, "unable to open for writing");
         close(src);
