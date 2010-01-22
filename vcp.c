@@ -312,9 +312,10 @@ int work_list()
     }
     
     /* reverse re-iterate: update directory-attrs, evtl. delete items */
-    for (ulong i=copy_list->count-1; i <= 0; i--) {
+    for (ulong i=copy_list->count-1; i < copy_list->count; i--) {
         item = copy_list->items[i];
         if (item->done != 1) {
+            print_debug("skipping failed item '%s'", item->fname);
             continue;
         }
         if (item->type == RDIR) {
