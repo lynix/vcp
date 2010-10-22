@@ -1,4 +1,4 @@
-							vcp - verbose cp
+                            vcp - verbose cp
 
                       (c) copyright lynix 2009, 2010
 
@@ -28,26 +28,26 @@ FEATURES
 Advantages compared to 'cp' (the cool stuff):
 
     * progress information:     Progress bars / textual information like
-								progress percentage, transfer speed and
-								ETA.
+                                progress percentage, transfer speed and
+                                ETA.
     
     * error handling:           A failed file will not interrupt the
                                 whole process; it will be skipped and
                                 reported at the end.
                                 
-	* smart argument parsing:   No need to think of recursion ('cp -r'),
-								folders will automatically be copied
-								together with their contents.
+    * smart argument parsing:   No need to think of recursion ('cp -r'),
+                                folders will automatically be copied
+                                together with their contents.
 
-	* information collecting:   All files are crawled *before* any real
-								transfer is started, including prompt
-								for overwriting/skipping. This way you
-								can be sure no question will interrupt
-								the transfer once it has begun (no
-								coming back after two hours and seeing
-								a dumb overwriting-prompt caused the
-								transfer to stop just a few seconds
-								after you left the room).
+    * information collecting:   All files are crawled *before* any real
+                                transfer is started, including prompt
+                                for overwriting/skipping. This way you
+                                can be sure no question will interrupt
+                                the transfer once it has begun (no
+                                coming back after two hours and seeing
+                                a dumb overwriting-prompt caused the
+                                transfer to stop just a few seconds
+                                after you left the room).
 
 
 CURRENT STATE, LIMITS
