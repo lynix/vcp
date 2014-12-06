@@ -1,4 +1,4 @@
-/* Copyright lynix <lynix47@gmail.com>, 2009, 2010
+/* Copyright lynix <lynix47@gmail.com>, 2009, 2010, 2014
  * 
  * This file is part of vcp (verbose cp).
  *
@@ -19,71 +19,71 @@
 #include "lists.h"
 
 struct flist *flist_init() {
-	struct flist *list;
-	
-	if ((list = malloc(sizeof(struct flist))) == NULL) {
-		return NULL;
-	}
-	if ((list->items = calloc(LIST_START, sizeof(struct file *))) == 
-			NULL) {
-		free(list);
-		return NULL;
-	}
-	list->count = 0;
+    struct flist *list;
+    
+    if ((list = malloc(sizeof(struct flist))) == NULL) {
+        return NULL;
+    }
+    if ((list->items = calloc(LIST_START, sizeof(struct file *))) == 
+            NULL) {
+        free(list);
+        return NULL;
+    }
+    list->count = 0;
     list->count_f = 0;
-	list->size = 0;
+    list->size = 0;
     list->bytes_done = 0;
-	list->arr_size = LIST_START;
+    list->arr_size = LIST_START;
 
-	return list;
+    return list;
 }
 
-int	flist_add(struct flist *list, struct file *item) {
-	ulong  temp_c;
-	off_t temp_s;
-	
-	if (list == NULL) {
-		return -1;
-	}
-	
-	/* check fill state, expand if necessary (we grow with 2^x here) */
-	if (list->count == list->arr_size) {
-		if ((list->items = realloc(list->items, list->arr_size * 2L * 
-				sizeof(struct file *)))	== NULL) {
-			return -1;
-		}
-		list->arr_size *= 2L;
-	}
-	
-	/* insert new item, update counters (with overflow check) */
-	list->items[list->count] = item;
-	temp_c = list->count;
-	temp_s = list->size;
-	list->size += item->size;
-	list->count++;
-	if (list->count <= temp_c || list->size < temp_s) {
-		list->count = temp_c;
-		list->size = temp_s;
+int flist_add(struct flist *list, struct file *item) {
+    ulong  temp_c;
+    off_t temp_s;
+    
+    if (list == NULL) {
+        return -1;
+    }
+    
+    /* check fill state, expand if necessary (we grow with 2^x here) */
+    if (list->count == list->arr_size) {
+        if ((list->items = realloc(list->items, list->arr_size * 2L * 
+                sizeof(struct file *))) == NULL) {
+            return -1;
+        }
+        list->arr_size *= 2L;
+    }
+    
+    /* insert new item, update counters (with overflow check) */
+    list->items[list->count] = item;
+    temp_c = list->count;
+    temp_s = list->size;
+    list->size += item->size;
+    list->count++;
+    if (list->count <= temp_c || list->size < temp_s) {
+        list->count = temp_c;
+        list->size = temp_s;
         list->items[list->count] = NULL;
-		return -1;
-	}
+        return -1;
+    }
     if (item->type == RFILE) {
         list->count_f++;
     }
-	
-	return 0;
+    
+    return 0;
 }
 
 struct file *flist_search_src(struct flist *list, struct file *item)
 {
-	for (ulong i=0; i < list->count; i++) {
-		if (strcmp(list->items[i]->src, item->src) == 0 &&
+    for (ulong i=0; i < list->count; i++) {
+        if (strcmp(list->items[i]->src, item->src) == 0 &&
                 list->items[i]->type != SLINK) {
-			return list->items[i];
-		}
-	}
+            return list->items[i];
+        }
+    }
 
-	return NULL;
+    return NULL;
 }
 
 void flist_sort_dst(struct flist *list)
@@ -101,7 +101,7 @@ void flist_sort_dst(struct flist *list)
 int flist_shrink(struct flist *list)
 {
     if ((list->items = realloc(list->items, list->count *
-            sizeof(struct file *)))	== NULL) {
+            sizeof(struct file *))) == NULL) {
         return -1;
     }
     list->arr_size = list->count;
@@ -110,44 +110,44 @@ int flist_shrink(struct flist *list)
 }
 
 struct strlist *strlist_init() {
-	struct strlist *list;
-	
-	if ((list = malloc(sizeof(struct strlist))) == NULL) {
-		return NULL;
-	}
-	if ((list->items = calloc(LIST_START, sizeof(char *))) == NULL) {
-		free(list);
-		return NULL;
-	}
-	list->count = 0;
-	list->arr_size = LIST_START;
+    struct strlist *list;
+    
+    if ((list = malloc(sizeof(struct strlist))) == NULL) {
+        return NULL;
+    }
+    if ((list->items = calloc(LIST_START, sizeof(char *))) == NULL) {
+        free(list);
+        return NULL;
+    }
+    list->count = 0;
+    list->arr_size = LIST_START;
 
-	return list;
+    return list;
 }
 
-int	strlist_add(struct strlist *list, char *item) {
-	ulong temp;
-	
-	if (list == NULL) {
-		return -1;
-	}
-	
-	/* check fill state, expand if necessary (we grow with 2^x here) */
-	if (list->count == list->arr_size) {
-		if ((list->items = realloc(list->items, list->arr_size * 2L * 
-				sizeof(char *))) == NULL) {
-			return -1;
-		}
-		list->arr_size *= 2L;
-	}
-	
-	/* insert new item, update counter (with overflow check) */
-	list->items[list->count] = item;
-	temp = list->count++;
-	if (list->count <= temp) {
-		list->count--;
-		return -1;
-	}
-	
-	return 0;
+int strlist_add(struct strlist *list, char *item) {
+    ulong temp;
+    
+    if (list == NULL) {
+        return -1;
+    }
+    
+    /* check fill state, expand if necessary (we grow with 2^x here) */
+    if (list->count == list->arr_size) {
+        if ((list->items = realloc(list->items, list->arr_size * 2L * 
+                sizeof(char *))) == NULL) {
+            return -1;
+        }
+        list->arr_size *= 2L;
+    }
+    
+    /* insert new item, update counter (with overflow check) */
+    list->items[list->count] = item;
+    temp = list->count++;
+    if (list->count <= temp) {
+        list->count--;
+        return -1;
+    }
+    
+    return 0;
 }

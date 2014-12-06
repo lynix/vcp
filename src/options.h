@@ -1,4 +1,4 @@
-/* Copyright lynix <lynix47@gmail.com>, 2009, 2010
+/* Copyright lynix <lynix47@gmail.com>, 2009, 2010, 2014
  * 
  * This file is part of vcp (verbose cp).
  *
@@ -19,25 +19,25 @@
 #ifndef _options_h
 #define _options_h
 
-#define BUFFS 1048576		/* 1MiB buffer for read() and write() 		*/
+#define BUFFS 1048576       /* 1MiB buffer for read() and write()       */
 #define BUFFM 10            /* buffer multiplier, see work_list()       */
-#define SPEED_N 5			/* speed middle calculation 				*/
-#define BAR_WIDTH 20		/* progress bar width (characters) 			*/
-#define MAX_SIZE_L 15		/* maximum length of size string, numbers 	*/
+#define SPEED_N 5           /* speed middle calculation                 */
+#define BAR_WIDTH 20        /* progress bar width (characters)          */
+#define MAX_SIZE_L 15       /* maximum length of size string, numbers   */
 
 
 struct options {
-	char bars;
-	char force;
-	char filenames;
-	char sync;
-	char delete;
-	char keep;
-	char quiet;
-	char update;
-	char verbose;
+    char bars;
+    char force;
+    char filenames;
+    char sync;
+    char delete;
+    char keep;
+    char quiet;
+    char update;
+    char verbose;
     char pretend;
-	char debug;
+    char debug;
     char ignore_uid_err;
 };
 #endif

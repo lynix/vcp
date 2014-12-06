@@ -1,4 +1,4 @@
-/* Copyright lynix <lynix47@gmail.com>, 2009, 2010
+/* Copyright lynix <lynix47@gmail.com>, 2009, 2010, 2014
  * 
  * This file is part of vcp (verbose cp).
  *
@@ -20,29 +20,29 @@
 
 struct file *f_get(char *fname)
 {
-	struct file *new_item;
-	struct stat filestat;
-	
-	/* check existance */
-	if (!f_exists(fname)) {
-		return NULL;
-	}
-	
-	/* create new item */
-	new_item = malloc(sizeof(struct file));
-	if (new_item == NULL) {
-		return NULL;
-	}
-	new_item->dst = NULL;
-	new_item->size = 0;
-	new_item->uid = 0;
-	new_item->gid = 0;
-	new_item->mode = 0;
+    struct file *new_item;
+    struct stat filestat;
+    
+    /* check existance */
+    if (!f_exists(fname)) {
+        return NULL;
+    }
+    
+    /* create new item */
+    new_item = malloc(sizeof(struct file));
+    if (new_item == NULL) {
+        return NULL;
+    }
+    new_item->dst = NULL;
+    new_item->size = 0;
+    new_item->uid = 0;
+    new_item->gid = 0;
+    new_item->mode = 0;
     new_item->done = 0;
-	
-	/* set source names */
-	new_item->src = fname;
-	new_item->fname = basename(fname);
+    
+    /* set source names */
+    new_item->src = fname;
+    new_item->fname = basename(fname);
 
     /* determine file type, collect attributes */
     if (lstat(fname, &filestat) != 0) {
@@ -84,38 +84,38 @@ struct file *f_get(char *fname)
             return NULL;
         }
     }
-	
-	return new_item;
+    
+    return new_item;
 }
 
 int f_equal(struct file *a, struct file *b)
 {
-	/* compares two given files regarding their size, owner and times 	*/
+    /* compares two given files regarding their size, owner and times   */
 
     /* compare filetype */
     if (a->type != b->type) {
         return 0;
     }
-	/* compare filesize */
-	if (a->size != b->size) {
-		return 0;
-	}
-	/* compare owner */
-	if (a->uid != b->uid || a->gid != b->gid) {
-		return 0;
-	}
-	/* compare modification times */
-	if (a->times.modtime != b->times.modtime) {
-		return 0;
-	}
+    /* compare filesize */
+    if (a->size != b->size) {
+        return 0;
+    }
+    /* compare owner */
+    if (a->uid != b->uid || a->gid != b->gid) {
+        return 0;
+    }
+    /* compare modification times */
+    if (a->times.modtime != b->times.modtime) {
+        return 0;
+    }
     /* compare link destination */
     if (a->type == SLINK) {
         if (strcmp(a->src, b->src) != 0) {
             return 0;
         }
     }
-	
-	return 1;
+    
+    return 1;
 }
 
 int f_clone_attrs(struct file *item)

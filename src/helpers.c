@@ -1,4 +1,4 @@
-/* Copyright lynix <lynix47@gmail.com>, 2009, 2010
+/* Copyright lynix <lynix47@gmail.com>, 2009, 2010, 2014
  * 
  * This file is part of vcp (verbose cp).
  *
@@ -56,7 +56,7 @@ void print_usage()
 {
     /* prints copyright and usage information                            */
     
-    printf("vcp  Copyright (C) 2009, 2010  lynix <lynix47@gmail.com>\n\n");
+    printf("vcp  Copyright (C) 2009, 2010, 2014  lynix <lynix47@gmail.com>\n\n");
     
     printf("This program comes with ABSOLUTELY NO WARRANTY, use at\n");
     printf("own risk. This is free software, and you are welcome to\n");

@@ -1,4 +1,4 @@
-/* Copyright lynix <lynix47@gmail.com>, 2009, 2010
+/* Copyright lynix <lynix47@gmail.com>, 2009, 2010, 2014
  * 
  * This file is part of vcp (verbose cp).
  *
@@ -23,17 +23,17 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <stdlib.h>
-#include <libgen.h>			/* basename(), dirname() */
+#include <libgen.h>         /* basename(), dirname() */
 #include <unistd.h>         /* symlink(), and others */
 #include <getopt.h>
 #include <ctype.h>
-#include <limits.h>			/* realpath() 								*/
-#include <stdlib.h>			/* realpath() 								*/
-#include <errno.h>			/* errno, strerror() 						*/
-#include <sys/ioctl.h>		/* ioctl(), get terminal width 				*/
+#include <limits.h>         /* realpath()                               */
+#include <stdlib.h>         /* realpath()                               */
+#include <errno.h>          /* errno, strerror()                        */
+#include <sys/ioctl.h>      /* ioctl(), get terminal width              */
 #include <pthread.h>        /* threads, what else                       */
 
-#include "lists.h"			/* my list implementations 					*/
+#include "lists.h"          /* my list implementations                  */
 #include "helpers.h"        /* little helper functions                  */
 #include "options.h"        /* global options, options struct           */
 
@@ -47,17 +47,17 @@ off_t           file_bytes_done;
 off_t           speed_arr[SPEED_N];
 
 /* functions */
-void 	init_opts();
+void    init_opts();
 void    fail_append(char *fname, char *error);
 void    list_show();
 void    *do_copy(void *p);
-void	*progress(void *p);
-int		build_list(int argc, int start, char *argv[]);
-int 	work_list();
-int 	parse_opts(int argc, char *argv[]);
+void    *progress(void *p);
+int     build_list(int argc, int start, char *argv[]);
+int     work_list();
+int     parse_opts(int argc, char *argv[]);
 int     crawl(char *src, char *dst);
 int     ask_overwrite(struct file *old, struct file *new);
 void    copy_file(struct file *item);
 void    copy_dir(struct file *item);
 void    copy_link(struct file *item);
-off_t 	speed_avg(off_t spd);
+off_t   speed_avg(off_t spd);
