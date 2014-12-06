@@ -19,12 +19,9 @@
 #ifndef _LISTS_H
 #define _LISTS_H
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include "file.h"
-
 #define LIST_START 5L
+
+#include <sys/types.h>
 
 typedef unsigned long ulong;
 

@@ -17,6 +17,12 @@
  */
 
 #include "lists.h"
+#include "file.h"
+
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
 
 struct flist *flist_init() {
     struct flist *list;

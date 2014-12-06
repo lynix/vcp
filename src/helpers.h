@@ -21,11 +21,8 @@
 
 #define _XOPEN_SOURCE 500
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include "options.h"
+#include <sys/types.h>
+
 
 void print_usage();
 void print_error(char *string, ...);

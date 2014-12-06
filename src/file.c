@@ -17,6 +17,15 @@
  */
 
 #include "file.h"
+#include "helpers.h"
+
+#include <stdlib.h>                     /* realpath(), and others   */
+#include <sys/stat.h>                   /* file attributes          */
+#include <libgen.h>                     /* basename()               */
+#include <unistd.h>                     /* F_OK                     */
+#include <string.h>                     /* strcmp()                 */
+#include <errno.h>                      /* clear errno if !F_OK     */
+
 
 struct file *f_get(char *fname)
 {

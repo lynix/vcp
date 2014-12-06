@@ -21,16 +21,8 @@
 
 #define _XOPEN_SOURCE 500
 
-#include <stdlib.h>                     /* realpath(), and others   */
-#include <sys/stat.h>                   /* file attributes          */
-#include <libgen.h>                     /* basename()               */
 #include <sys/types.h>                  /* uid_t, gid_t, etc.       */
 #include <utime.h>                      /* struct utimbuf           */
-#include <unistd.h>                     /* F_OK                     */
-#include <string.h>                     /* strcmp()                 */
-#include <errno.h>                      /* clear errno if !F_OK     */
-
-#include "helpers.h"
 
 enum ftype { RFILE, RDIR, SLINK };
 
