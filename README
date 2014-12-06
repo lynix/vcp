@@ -1,104 +1,84 @@
                             vcp - verbose cp
 
-                      (c) copyright lynix 2009, 2010
+                       (C) lynix 2009, 2010, 2014
+
 
 SUMMARY
 --------------------------
-vcp is a tool like 'cp' that copies files and directories and prints
-nice progress information in form of progress bars or percentage values.
-Additionally, it has some nice little features 'cp' lacks, like error
-handling and synchronous writing.
+
+'vcp' is intended to be a (limited) replacement for 'cp' or 'mv', providing some
+additional features like visual progress information and error handling.
+
 
 
 USAGE
 --------------------------
-vcp is designed to be handled just like 'cp'. Let's say you want to copy
-the folder /foo/bar, including all of its contents (subfolders, files,
-etc.), as well as the file /foo/file to your home directory.
-The call is just like with 'cp':
 
-$ vcp /foo/bar /foo/file ~
+'vcp' is designed to be called similar to 'cp'/'mv':
 
-All the switches that can influence the behaviour and output of vcp are
-described in the help text, displayed via 'vcp -h'.
+  $ vcp /foo/file1 /bar/directory2 /path/to/destination
+
+Note: in contrast to standard 'cp', you don't need to supply '-r' for copying
+directories. 
+
+For a complete list of switches and options please see the help text (`vcp -h`).
+
 
 
 FEATURES
 --------------------------
+
 Advantages compared to 'cp' (the cool stuff):
 
-    * progress information:     Progress bars / textual information like
-                                progress percentage, transfer speed and
-                                ETA.
+    * Progress Information:     Progress bars or textual information like
+                                transfer percentage, speed and ETA.
     
-    * error handling:           A failed file will not interrupt the
-                                whole process; it will be skipped and
-                                reported at the end.
+    * Error Handling:           A failed file will not interrupt the whole
+                                process, it will be skipped and reported at the
+                                end.
                                 
-    * smart argument parsing:   No need to think of recursion ('cp -r'),
-                                folders will automatically be copied
-                                together with their contents.
+    * Smart Argument Parsing:   No need to think of recursion ('cp -r'), folders
+                                will automatically be copied together with their
+                                contents.
 
-    * information collecting:   All files are crawled *before* any real
-                                transfer is started, including prompt
-                                for overwriting/skipping. This way you
-                                can be sure no question will interrupt
-                                the transfer once it has begun (no
-                                coming back after two hours and seeing
-                                a dumb overwriting-prompt caused the
-                                transfer to stop just a few seconds
-                                after you left the room).
+    * Crawling:                 All source items are crawled *before* transfer
+                                is started, allowing user prompt for overwriting
+                                or skipping.
+                                (no coming back after two hours and seeing a
+                                dumb overwriting confirmation prompt which
+                                caused the whole transfer to stop just a few
+                                seconds after you left the room... ;) )
 
 
-CURRENT STATE, LIMITS
+
+HISTORY / PHILOSOPHY
 --------------------------
-The current state can be interpreted from the TODO and CHANGELOG files,
-as well as the news on the homepage (http://lynix.github.com/vcp).
-Fixed limits for file sizes and transfer speed depend on the
-architecture the program is compiled on (x86, x86_64) and can be shown
-with 'vcp -l'.
+
+Back in 2009, after switching from Gentoo to Arch I started missing progress
+information for cp/mv, which Gentoo had provided via a patch for coreutils. As I
+used to copy large files around on a very weak PIII box, this annoyed me so hard
+that I decided to write a simple replacement.
+
+'vcp' was my very first piece of C code, and one can see this at some lines;)
+I'll try to give this ancient project some new love in form of code style
+improvements and proper abstraction if I find some time.
+
+The goal of 'vcp' is NOT to provide a full replacement for 'cp'/'mv'. It shall
+only be a simple tool for common file transfer operations, providing the
+aforementioned additional features.
 
 
-PHILOSOPHY
+
+BUGS / CONTACT
 --------------------------
-The idea to write something like vcp was born when I got more and more
-annoyed by the fact that 'cp' does not print any status information. I
-use several ssh machines and do lots of file-copying, so every time I
-started a large transfer I got no idea when it would be finished. I once
-had that feature with gentoo and the patched coreutils, but switched to
-Arch Linux / Debian and started terribly missing it.
-I took vcp as a project for learning C, which I was planning to do for
-a couple of years and never really did. I knew the basic syntax, hacked
-a few patches for my favourite little tools but never seriously started
-'learning' it.
-Therefore, I try to keep vcp as simple as possible, according to the
-KISS-principle. I only use the basic I/O functions for the syscalls, and
-keep the code well commented.
-The goal of vcp is NOT to provide a replacement for 'cp'. There will
-always be cases in which 'cp' or 'mv' are the better alternatives. vcp
-shall only be a useful peace of software that copies or moves your data,
-keeping you informed about the progress and possible errors.
 
+Feel free to send suggestions for improvements or bug reports using the 'issues'
+function on GitHub.
 
-IMPORTANT HINTS
---------------------------
-As stated in the GNU GPL (under which this project is published), THIS
-PROGRAM COMES WITH ABSOLUTELY NO WARRANTY! USE AT YOUR OWN RISK!
-I try to keep it as bug-free as I can, and test every change I make
-before commiting it to the git repo, but nobody's perfect.
-I encourage you to rather use 'cp' and 'mv' for critical system files.
-
-
-CONTACT
---------------------------
-If you have any questions, suggestions or comments please feel free to
-write me an email (lynix47@gmail.com, GPG key 4804CCA9 on keys.gnupg.net)
-or open a bug report on GitHub. I always appreciate constructive feedback,
-and as this is my first 'project in the wild', messages like 'Hey, I just
-tried your tool and it made my day!' are welcome, too :-)
 
 
 LICENSE
 --------------------------
-This program is published under the terms of the GNU General Public
-License, version 3. See 'LICENSE' for more information.
+
+This program is published under the terms of the GNU General Public License,
+version 3. See the file 'LICENSE' for more information.
