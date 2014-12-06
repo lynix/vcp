@@ -16,6 +16,9 @@
  * along with vcp. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef _LISTS_H
+#define _LISTS_H
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -48,3 +51,5 @@ struct strlist {
 
 struct  strlist *strlist_init();
 int     strlist_add(struct strlist *list, char *item);
+
+#endif

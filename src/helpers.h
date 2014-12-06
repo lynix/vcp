@@ -16,6 +16,9 @@
  * along with vcp. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef _HELPERS_H
+#define _HELPERS_H
+
 #define _XOPEN_SOURCE 500
 
 #include <stdio.h>
@@ -41,3 +44,5 @@ char *strccat(char *a, char *b);
 char *path_str(char *path, char *sub);
 char *size_str(off_t bytes);
 char *bar_str(char percent);
+
+#endif

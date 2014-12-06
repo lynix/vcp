@@ -16,6 +16,9 @@
  * along with vcp. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef _FILE_H
+#define _FILE_H
+
 #define _XOPEN_SOURCE 500
 
 #include <stdlib.h>                     /* realpath(), and others   */
@@ -49,3 +52,5 @@ int     f_equal(struct file *a, struct file *b);
 int     f_exists(char *fname);
 int     f_clone_attrs(struct file *item);
 int     f_cmpr_dst(const void *a, const void *b);
+
+#endif

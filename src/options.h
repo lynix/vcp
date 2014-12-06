@@ -16,8 +16,8 @@
  * along with vcp. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _options_h
-#define _options_h
+#ifndef _OPTIONS_H
+#define _OPTIONS_H
 
 #define BUFFS 1048576       /* 1MiB buffer for read() and write()       */
 #define BUFFM 10            /* buffer multiplier, see work_list()       */
@@ -40,4 +40,5 @@ struct options {
     char debug;
     char ignore_uid_err;
 };
+
 #endif
