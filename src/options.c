@@ -109,8 +109,8 @@ int parse_opts(opts_t *opts, int argc, char *argv[])
                     print_error("unknown option \"-%c\".\nTry -h for help.",
                                 optopt);
                 } else {
-                    print_error("unknown option character \"\\x%x\".\nTry -h for help.",
-                                optopt);
+                    print_error("unknown option character \"\\x%x\".", optopt);
+                    print_error("Try -h for help.");
                 }
                 return -1;
             default:
