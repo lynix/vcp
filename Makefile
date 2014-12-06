@@ -1,5 +1,5 @@
 CC		= gcc
-CFLAGS	= -Wall -ansi -std=c99 -pedantic -D_FILE_OFFSET_BITS=64 -pthread -g
+CFLAGS	= -Wall -ansi -std=c99 -pedantic -O2 -D_FILE_OFFSET_BITS=64 -pthread -g
 DESTDIR	= /usr/local
 
 BIN		= bin/vcp
