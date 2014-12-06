@@ -1,27 +1,25 @@
-CC = gcc
-CFLAGS = -Wall -ansi -std=c99 -pedantic -D_FILE_OFFSET_BITS=64 -pthread -g
-DESTDIR = /usr/local
+CC		= gcc
+CFLAGS	= -Wall -ansi -std=c99 -pedantic -D_FILE_OFFSET_BITS=64 -pthread -g
+DESTDIR	= /usr/local
 
-vcp : vcp.o lists.o file.o helpers.o
+BIN		= bin/vcp
+SRCS	= $(wildcard src/*.c)
+OBJS	= $(addprefix obj/,$(notdir $(SRCS:.c=.o)))
+
+all: $(BIN)
+
+$(BIN): $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
-vcp.o : vcp.c options.h
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ -c $<
+obj/%.o: src/%.c src/*.h
+	$(CC) $(CFLAGS) -c -o $@ $<
 
-lists.o : lists.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ -c $<
 
-file.o : file.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ -c $<
-
-helpers.o : helpers.c options.h
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ -c $<
-
-install: vcp
+install: $(BIN)
 	mkdir -p $(DESTDIR)/bin
-	install -m 755 vcp $(DESTDIR)/bin/vcp
+	install -m 755 $(BIN) $(DESTDIR)/bin/vcp
 
-clean :
-	rm -f vcp *.o
+clean:
+	rm -f $(BIN) $(OBJS)
 
 .PHONY: clean install
