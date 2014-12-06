@@ -17,6 +17,7 @@
  */
 
 #include "lists.h"
+#include "helpers.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -105,6 +106,51 @@ int flist_shrink(flist_t *list)
     list->arr_size = list->count;
 
     return 0;
+}
+
+void flist_print(flist_t *list, opts_t *opts)
+{
+    off_t size = 0;
+    ulong count = 0;
+    char mark = 0;
+
+    for (ulong i=0; i<list->count; i++) {
+
+        file_t *item = list->items[i];
+        if (item->done && !opts->delete)
+            continue;
+
+        if (item->type == RFILE) {
+            printf(" [F] ");
+            count++;
+            size += item->size;
+        } else if (item->type == RDIR) {
+            printf(" [D] ");
+        } else if (item->type == SLINK) {
+            printf(" [S] ");
+        }
+
+        printf("%s --> %s", item->src, item->dst);
+
+        if (item->done) {
+            mark = 1;
+            printf("(*)");
+        } else if (item->type == RFILE) {
+            printf(" (%s)", size_str(item->size));
+        }
+
+        putchar('\n');
+    }
+
+    putchar('\n');
+    if (mark) {
+        puts("(*) marked items already exist at their destination");
+        puts("    and do not count for transfer size.\n");
+    }
+    printf("Total transfer size: %lu file(s), %s\n\n", count, size_str(size));
+    fflush(stdout);
+
+    return;
 }
 
 strlist_t *strlist_new()

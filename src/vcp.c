@@ -48,7 +48,6 @@ off_t           file_bytes_done;
 
 /* functions */
 void    fail_append(char *fname, char *error);
-void    list_show();
 void    *do_copy(void *p);
 void    *progress(void *p);
 int     build_list(int argc, int start, char *argv[]);
@@ -88,7 +87,7 @@ int main(int argc, char *argv[])
 
     /* evtl. print summary, exit if in pretend mode */
     if (opts.verbose || opts.pretend) {
-        list_show();
+        flist_print(copy_list, &opts);
     }
     if (opts.pretend) {
         free(copy_list);
@@ -193,52 +192,6 @@ int build_list(int argc, int start, char *argv[])
     flist_sort(copy_list);
     
     return 0;
-}
-
-void list_show()
-{
-    file_t *item;
-    off_t  size;
-    ulong  count;
-    char   mark;
-
-    mark = 0;
-    size = 0;
-    count = 0;
-    
-    for (ulong i=0; i<copy_list->count; i++) {
-        item = copy_list->items[i];
-        if (item->done && !opts.delete) {
-            continue;
-        }
-        if (item->type == RFILE) {
-            printf(" [F] ");
-            count++;
-            size += item->size;
-        } else if (item->type == RDIR) {
-            printf(" [D] ");
-        } else if (item->type == SLINK) {
-            printf(" [S] ");
-        }
-        printf("%s --> %s", item->src, item->dst);
-        if (item->done) {
-            mark = 1;
-            printf("(*)");
-        } else if (item->type == RFILE) {
-            printf(" (%s)", size_str(item->size));
-        }
-        putchar('\n');
-    }
-    putchar('\n');
-    if (mark) {
-        printf("(*) marked items already exist at their destination\n");
-        printf("    and do not count for transfer size.\n\n");
-    }
-    printf("Total transfer size: %lu file(s), %s\n\n", count,
-            size_str(size));
-    fflush(stdout);
-
-    return;
 }
 
 int crawl(char *src, char *dst)

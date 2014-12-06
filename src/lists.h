@@ -20,6 +20,7 @@
 #define _LISTS_H
 
 #include "file.h"
+#include "options.h"
 
 #include <sys/types.h>
 
@@ -48,6 +49,9 @@ int     flist_shrink(flist_t *list);
 
 // sort given file list (by destination path)
 void    flist_sort(flist_t *list);
+
+// print textual representation of given list to stdout
+void    flist_print(flist_t *list, opts_t *opts);
 
 
 typedef struct {
