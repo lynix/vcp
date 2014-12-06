@@ -16,7 +16,7 @@ USAGE
 
 'vcp' is designed to be called similar to 'cp'/'mv':
 
-  $ vcp /foo/file1 /bar/directory2 /path/to/destination
+    $ vcp /foo/file1 /bar/directory2 /path/to/destination
 
 Note: in contrast to standard 'cp', you don't need to supply '-r' for copying
 directories. 
