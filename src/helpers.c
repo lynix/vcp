@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <errno.h>
 
 #define BAR_STEP (100.0/(BAR_WIDTH-2))
 
@@ -211,6 +212,26 @@ int ask_overwrite(file_t *old, file_t *new)
     }
 
     return 0;
+}
+
+void fail_append(strlist_t *fail_list, char *fname, char *error)
+{
+    char *errmsg;
+
+    errmsg = strccat(fname, ": ");
+    errmsg = strccat(errmsg, error);
+    if (errno != 0) {
+        errmsg = strccat(errmsg, " (");
+        errmsg = strccat(errmsg, strerror(errno));
+        errmsg = strccat(errmsg, ")");
+    }
+
+    if (strlist_add(fail_list, errmsg) != 0) {
+        print_debug("failed to add to fail-list:");
+        print_error(errmsg);
+    }
+
+    return;
 }
 
 inline void print_progr_bs(char perc, char *bps, char eta_s, char eta_m,

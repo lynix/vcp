@@ -22,6 +22,7 @@
 #define _XOPEN_SOURCE 500
 
 #include "file.h"
+#include "lists.h"
 
 #include <sys/types.h>                  // off_t
 
@@ -58,5 +59,8 @@ char *bar_str(char percent);
 
 // query file overwriting
 int ask_overwrite(file_t *old, file_t *new);
+
+// append textual representation of failed file to given string list
+void fail_append(strlist_t *fail_list, char *fname, char *error);
 
 #endif

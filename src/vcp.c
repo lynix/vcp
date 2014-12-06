@@ -47,15 +47,14 @@ pthread_mutex_t file_bytes_lock;
 off_t           file_bytes_done;
 
 /* functions */
-void    fail_append(char *fname, char *error);
-void    *do_copy(void *p);
-void    *progress(void *p);
+void    *copy_thread(void *p);
+void    *progress_thread(void *p);
 int     build_list(int argc, int start, char *argv[]);
 int     work_list();
 int     crawl(char *src, char *dst);
-void    copy_file(file_t *item);
-void    copy_dir(file_t *item);
-void    copy_link(file_t *item);
+void    copy_file(file_t *file);
+void    copy_dir(file_t *file);
+void    copy_link(file_t *file);
 
 
 int main(int argc, char *argv[])
@@ -316,7 +315,8 @@ int work_list()
         if (item->type == RDIR) {
             if (f_clone_attrs(item) != 0) {
                 if (!opts.ignore_uid_err) {
-                    fail_append(item->dst, "unable to set attributes");
+                    fail_append(fail_list, item->dst,
+                            "unable to set attributes");
                     item->done = 0;
                     continue;
                 }
@@ -329,7 +329,7 @@ int work_list()
                 tempstr = item->src;
             }
             if (remove(tempstr) != 0) {
-                fail_append(tempstr, "unable to delete");
+                fail_append(fail_list, tempstr, "unable to delete");
                 item->done = 0;
             }
         }
@@ -347,7 +347,7 @@ int work_list()
     return 0;
 }
 
-void *do_copy(void *p)
+void *copy_thread(void *p)
 {
     int   src, dst;
     char  *buffer;
@@ -358,14 +358,14 @@ void *do_copy(void *p)
     
     /* open source (true, true ;)) */
     if ((src = open(item->src, O_RDONLY)) == -1) {
-        fail_append(item->src, "unable to open for reading");
+        fail_append(fail_list, item->src, "unable to open for reading");
         return NULL;
     }
     
     /* open destination */
     if ((dst = open(item->dst, O_CREAT|O_WRONLY|O_TRUNC, (mode_t)0600))
                         == -1) {
-        fail_append(item->dst, "unable to open for writing");
+        fail_append(fail_list, item->dst, "unable to open for writing");
         close(src);
         return NULL;
     }
@@ -375,7 +375,7 @@ void *do_copy(void *p)
     if ((buffer = malloc(buffsize)) == NULL) {
         print_error("failed to allocate %s for buffer",
                     size_str(buffsize));
-        fail_append(item->src, "failed to allocate buffer");
+        fail_append(fail_list, item->src, "failed to allocate buffer");
         close(src);
         close(dst);
         return NULL;
@@ -388,13 +388,13 @@ void *do_copy(void *p)
     /* the part you are looking for: read from source... */
     while ((bytes_r = read(src, buffer, buffsize))) {
         if (bytes_r == -1) {
-            fail_append(item->src, "I/O error while reading");
+            fail_append(fail_list, item->src, "I/O error while reading");
             break;
         }
         /* ... and write to destination */
         bytes_w = write(dst, buffer, bytes_r);
         if (bytes_w != bytes_r) {
-            fail_append(item->src, "I/O error while writing");
+            fail_append(fail_list, item->src, "I/O error while writing");
             break;
         }
         /* account written data, thread-safe */
@@ -410,7 +410,7 @@ void *do_copy(void *p)
         /* fsync if requested */
         if (opts.sync) {
             if (fsync(dst) != 0) {
-                fail_append(item->dst, "fsync failed");
+                fail_append(fail_list, item->dst, "fsync failed");
                 item->done = 0;
             }
         }
@@ -418,14 +418,14 @@ void *do_copy(void *p)
         /* clone attributes */
         if (f_clone_attrs(item) != 0) {
             if (!opts.ignore_uid_err) {
-                fail_append(item->dst, "failed to apply attributes");
+                fail_append(fail_list, item->dst, "failed to apply attributes");
                 item->done = 0;
             }
         }
     } else {
         /* remove incomplete transfers */
         if (remove(item->dst) != 0) {
-            fail_append(item->dst, "failed to remove corrupt dest");
+            fail_append(fail_list, item->dst, "failed to remove corrupt dest");
         }
     }
     
@@ -437,16 +437,15 @@ void *do_copy(void *p)
     return NULL;
 }
 
-void *progress(void *p)
+void *progress_thread(void *p)
 {
-    file_t *item;
+    file_t *item = (file_t *)p;
     time_t start, now, elapsed;
     char perc_t, perc_f, *speed;
     off_t bytes_per_sec, bytes_written;
     int remaining_s;
     char eta_h, eta_m, eta_s;
 
-    item = (file_t *)p;
     perc_t = (float)copy_list->bytes_done / copy_list->size * 100;
     bytes_written = 0;
     time(&start);
@@ -532,90 +531,77 @@ void *progress(void *p)
     return NULL;
 }
 
-void fail_append(char *fname, char *error)
+void copy_dir(file_t *file)
 {
-    char *errmsg;
-
-    errmsg = strccat(fname, ": ");
-    errmsg = strccat(errmsg, error);
-    if (errno != 0) {
-        errmsg = strccat(errmsg, " (");
-        errmsg = strccat(errmsg, strerror(errno));
-        errmsg = strccat(errmsg, ")");
-    }
-    
-    if (strlist_add(fail_list, errmsg) != 0) {
-        print_debug("failed to add to fail-list:");
-        print_error(errmsg);
-    }
-
-    return;
-}
-
-void copy_dir(file_t *item)
-{
-    if (mkdir(item->dst, item->mode) != 0) {
-        fail_append(item->dst, "unable to create directory");
-        item->done = 0;
+    if (mkdir(file->dst, file->mode) != 0) {
+        fail_append(fail_list, file->dst, "unable to create directory");
+        file->done = 0;
     } else {
-        item->done = 1;
+        file->done = 1;
     }
 
     return;
 }
 
-void copy_file(file_t *item)
+void copy_file(file_t *file)
 {
-    pthread_t copy_thread, progr_thread;
-    char join_progr;
-
-    /* initialize mutex */
+    /* initialize globals */
     if (pthread_mutex_init(&file_bytes_lock, NULL) != 0) {
-        fail_append(item->dst, "failed to initialize bytes_done mutex");
+        fail_append(fail_list, file->dst,
+                "failed to initialize bytes_done mutex");
         return;
     }
-
     file_bytes_done = 0;
     file_done_flag = 0;
-    join_progr = 0;
     
-    if (pthread_create(&copy_thread, NULL, do_copy, item) != 0) {
-        fail_append(item->dst, "unable to spawn copy-thread");
+    pthread_t copy_thrd, progr_thrd;
+    char join_progr = 0;
+
+    /* spawn copy worker thread */
+    if (pthread_create(&copy_thrd, NULL, copy_thread, file) != 0) {
+        fail_append(fail_list, file->dst, "unable to spawn copy-thread");
+        pthread_mutex_destroy(&file_bytes_lock);
         return;
     }
-    if (!opts.quiet && item->size > BUFFS*BUFFM) {
-        if (pthread_create(&progr_thread, NULL, progress, item) != 0) {
+
+    /* spawn progress thread */
+    if (!opts.quiet && file->size > BUFFS*BUFFM) {
+        if (pthread_create(&progr_thrd, NULL, progress_thread, file) != 0) {
             print_error("unable to spawn progress-thread (quiet copy)");
         } else {
             join_progr = 1;
         }
     }
-    pthread_join(copy_thread, NULL);
+
+    pthread_join(copy_thrd, NULL);
     if (join_progr) {
         /* signal progress thread */
         file_done_flag = 1;
-        pthread_join(progr_thread, NULL);
+        pthread_join(progr_thrd, NULL);
     }
+
     /* account global progress */
-    copy_list->bytes_done += item->size;
+    copy_list->bytes_done += file->size;
 
     /* clean up */
     pthread_mutex_destroy(&file_bytes_lock);
+
+    return;
 }
 
-void copy_link(file_t *item)
+void copy_link(file_t *file)
 {
     /* remove evtl. existing one */
-    if (access(item->dst, F_OK) == 0) {
-        if (remove(item->dst) != 0) {
-            fail_append(item->dst, "unable to delete link");
+    if (access(file->dst, F_OK) == 0) {
+        if (remove(file->dst) != 0) {
+            fail_append(fail_list, file->dst, "unable to delete link");
         }
     }
     /* create new link */
-    if (symlink(item->src, item->dst) != 0) {
-        fail_append(item->dst, "unable to create symlink");
-        item->done = 0;
+    if (symlink(file->src, file->dst) != 0) {
+        fail_append(fail_list, file->dst, "unable to create symlink");
+        file->done = 0;
     } else {
-        item->done = 1;
+        file->done = 1;
     }
 }
