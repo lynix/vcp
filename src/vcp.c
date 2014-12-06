@@ -41,9 +41,9 @@
 #include "options.h"        /* global options, options struct           */
 
 /* globals */
-struct options  opts;
-struct flist    *copy_list;
-struct strlist  *fail_list;
+opts_t          opts;
+flist_t         *copy_list;
+strlist_t       *fail_list;
 char            file_done_flag;
 pthread_mutex_t file_bytes_lock;
 off_t           file_bytes_done;
@@ -59,10 +59,10 @@ int     build_list(int argc, int start, char *argv[]);
 int     work_list();
 int     parse_opts(int argc, char *argv[]);
 int     crawl(char *src, char *dst);
-int     ask_overwrite(struct file *old, struct file *new);
-void    copy_file(struct file *item);
-void    copy_dir(struct file *item);
-void    copy_link(struct file *item);
+int     ask_overwrite(file_t *old, file_t *new);
+void    copy_file(file_t *item);
+void    copy_dir(file_t *item);
+void    copy_link(file_t *item);
 off_t   speed_avg(off_t spd);
 
 
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 int build_list(int argc, int start, char *argv[])
 {
     int     argfcount;
-    struct  file *f_item, *f_item2;
+    file_t  *f_item, *f_item2;
     char    *dest, *dest_dir, *dest_base, *item;
     
     /* clean destination path */
@@ -203,7 +203,7 @@ int build_list(int argc, int start, char *argv[])
 
 void list_show()
 {
-    struct file *item;
+    file_t *item;
     off_t  size;
     ulong  count;
     char   mark;
@@ -253,8 +253,8 @@ int crawl(char *src, char *dst)
     
     DIR    *src_dir;
     struct dirent *src_dirp;
-    struct file *f_src;
-    struct file *f_dst;
+    file_t *f_src;
+    file_t *f_dst;
     
     /* check source access, prepare file struct */
     if ((f_src = f_get(src)) == NULL) {
@@ -320,7 +320,7 @@ int work_list()
 {
     /* works off the file list and copies each item                        */
 
-    struct file *item;
+    file_t *item;
     char *tempstr;
 
     /* initialize fail-list */
@@ -405,9 +405,9 @@ void *do_copy(void *p)
     int   src, dst;
     char  *buffer;
     long  buffsize, bytes_r, bytes_w;
-    struct file *item;
+    file_t *item;
 
-    item = (struct file *)p;
+    item = (file_t *)p;
     
     /* open source (true, true ;)) */
     if ((src = open(item->src, O_RDONLY)) == -1) {
@@ -492,14 +492,14 @@ void *do_copy(void *p)
 
 void *progress(void *p)
 {
-    struct file *item;
+    file_t *item;
     time_t start, now, elapsed;
     char perc_t, perc_f, *speed;
     off_t bytes_per_sec, bytes_written;
     int remaining_s;
     char eta_h, eta_m, eta_s;
 
-    item = (struct file *)p;
+    item = (file_t *)p;
     perc_t = (float)copy_list->bytes_done / copy_list->size * 100;
     bytes_written = 0;
     time(&start);
@@ -585,7 +585,7 @@ void *progress(void *p)
     return NULL;
 }
 
-int ask_overwrite(struct file *old, struct file *new)
+int ask_overwrite(file_t *old, file_t *new)
 {
     /* prints a confirmation dialog for file overwriting                */
     
@@ -763,7 +763,7 @@ void fail_append(char *fname, char *error)
     return;
 }
 
-void copy_dir(struct file *item)
+void copy_dir(file_t *item)
 {
     if (mkdir(item->dst, item->mode) != 0) {
         fail_append(item->dst, "unable to create directory");
@@ -775,7 +775,7 @@ void copy_dir(struct file *item)
     return;
 }
 
-void copy_file(struct file *item)
+void copy_file(file_t *item)
 {
     pthread_t copy_thread, progr_thread;
     char join_progr;
@@ -814,7 +814,7 @@ void copy_file(struct file *item)
     pthread_mutex_destroy(&file_bytes_lock);
 }
 
-void copy_link(struct file *item)
+void copy_link(file_t *item)
 {
     /* remove evtl. existing one */
     if (f_exists(item->dst)) {

@@ -24,25 +24,25 @@
 #include <sys/types.h>                  /* uid_t, gid_t, etc.       */
 #include <utime.h>                      /* struct utimbuf           */
 
-enum ftype { RFILE, RDIR, SLINK };
+typedef enum { RFILE, RDIR, SLINK } ftype_t;
 
-struct file {
+typedef struct {
     char    *fname;
     char    *src;
     char    *dst;
-    enum    ftype type;
+    ftype_t type;
     off_t   size;
     uid_t   uid;
     gid_t   gid;
     mode_t  mode;
     struct  utimbuf times;
     char    done;
-};
+} file_t;
 
-struct  file *f_get(char *fname);
-int     f_equal(struct file *a, struct file *b);
+file_t  *f_get(char *fname);
+int     f_equal(file_t *a, file_t *b);
 int     f_exists(char *fname);
-int     f_clone_attrs(struct file *item);
+int     f_clone_attrs(file_t *item);
 int     f_cmpr_dst(const void *a, const void *b);
 
 #endif

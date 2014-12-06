@@ -27,9 +27,9 @@
 #include <errno.h>                      /* clear errno if !F_OK     */
 
 
-struct file *f_get(char *fname)
+file_t *f_get(char *fname)
 {
-    struct file *new_item;
+    file_t *new_item;
     struct stat filestat;
     
     /* check existance */
@@ -38,7 +38,7 @@ struct file *f_get(char *fname)
     }
     
     /* create new item */
-    new_item = malloc(sizeof(struct file));
+    new_item = malloc(sizeof(file_t));
     if (new_item == NULL) {
         return NULL;
     }
@@ -97,7 +97,7 @@ struct file *f_get(char *fname)
     return new_item;
 }
 
-int f_equal(struct file *a, struct file *b)
+int f_equal(file_t *a, file_t *b)
 {
     /* compares two given files regarding their size, owner and times   */
 
@@ -127,7 +127,7 @@ int f_equal(struct file *a, struct file *b)
     return 1;
 }
 
-int f_clone_attrs(struct file *item)
+int f_clone_attrs(file_t *item)
 {
     /* applies the attributes of a given file to another                */
     
@@ -167,8 +167,8 @@ int f_cmpr_dst(const void *a, const void *b)
     char *str_a;
     char *str_b;
 
-    str_a = (*((struct file **)a))->dst;
-    str_b = (*((struct file **)b))->dst;
+    str_a = (*((file_t **)a))->dst;
+    str_b = (*((file_t **)b))->dst;
     
     return strcmp(str_a, str_b);
 }

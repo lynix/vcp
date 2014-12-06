@@ -26,7 +26,7 @@
 #define MAX_SIZE_L 15       /* maximum length of size string, numbers   */
 
 
-struct options {
+typedef struct {
     char bars;
     char force;
     char filenames;
@@ -39,6 +39,6 @@ struct options {
     char pretend;
     char debug;
     char ignore_uid_err;
-};
+} opts_t;
 
 #endif

@@ -45,7 +45,7 @@ void print_debug(char *msg, ...)
     /* prints debugging messages to stdout if debug is set                */
     
     va_list argpointer;
-    extern struct options opts;
+    extern opts_t opts;
     
     if (opts.debug) {
         va_start(argpointer, msg);

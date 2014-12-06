@@ -21,32 +21,34 @@
 
 #define LIST_START 5L
 
+#include "file.h"
+
 #include <sys/types.h>
 
 typedef unsigned long ulong;
 
-struct flist {
+typedef struct {
     ulong   count;
     ulong   count_f;
     ulong   arr_size;
     off_t   size;
     off_t   bytes_done;
-    struct file **items;
-};
+    file_t  **items;
+} flist_t;
 
-struct  flist *flist_init();
-struct  file *flist_search_src(struct flist *list, struct file *item);
-int     flist_add(struct flist *list, struct file *item);
-int     flist_shrink(struct flist *list);
-void    flist_sort_dst(struct flist *list);
+flist_t *flist_init();
+file_t  *flist_search_src(flist_t *list, file_t *item);
+int     flist_add(flist_t *list, file_t *item);
+int     flist_shrink(flist_t *list);
+void    flist_sort_dst(flist_t *list);
 
-struct strlist {
+typedef struct {
     ulong   count;
     ulong   arr_size;
     char    **items;
-};
+} strlist_t;
 
-struct  strlist *strlist_init();
-int     strlist_add(struct strlist *list, char *item);
+strlist_t   *strlist_init();
+int         strlist_add(strlist_t *list, char *item);
 
 #endif

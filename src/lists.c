@@ -17,20 +17,19 @@
  */
 
 #include "lists.h"
-#include "file.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 
-struct flist *flist_init() {
-    struct flist *list;
+flist_t *flist_init() {
+    flist_t *list;
     
-    if ((list = malloc(sizeof(struct flist))) == NULL) {
+    if ((list = malloc(sizeof(flist_t))) == NULL) {
         return NULL;
     }
-    if ((list->items = calloc(LIST_START, sizeof(struct file *))) == 
+    if ((list->items = calloc(LIST_START, sizeof(file_t *))) ==
             NULL) {
         free(list);
         return NULL;
@@ -44,7 +43,7 @@ struct flist *flist_init() {
     return list;
 }
 
-int flist_add(struct flist *list, struct file *item) {
+int flist_add(flist_t *list, file_t *item) {
     ulong  temp_c;
     off_t temp_s;
     
@@ -55,7 +54,7 @@ int flist_add(struct flist *list, struct file *item) {
     /* check fill state, expand if necessary (we grow with 2^x here) */
     if (list->count == list->arr_size) {
         if ((list->items = realloc(list->items, list->arr_size * 2L * 
-                sizeof(struct file *))) == NULL) {
+                sizeof(file_t *))) == NULL) {
             return -1;
         }
         list->arr_size *= 2L;
@@ -80,7 +79,7 @@ int flist_add(struct flist *list, struct file *item) {
     return 0;
 }
 
-struct file *flist_search_src(struct flist *list, struct file *item)
+file_t *flist_search_src(flist_t *list, file_t *item)
 {
     for (ulong i=0; i < list->count; i++) {
         if (strcmp(list->items[i]->src, item->src) == 0 &&
@@ -92,22 +91,22 @@ struct file *flist_search_src(struct flist *list, struct file *item)
     return NULL;
 }
 
-void flist_sort_dst(struct flist *list)
+void flist_sort_dst(flist_t *list)
 {
     if (flist_shrink(list) != 0) {
         return;
     }
 
-    qsort(list->items, list->arr_size, sizeof(struct file *),
+    qsort(list->items, list->arr_size, sizeof(file_t *),
             f_cmpr_dst);
 
     return;
 }
 
-int flist_shrink(struct flist *list)
+int flist_shrink(flist_t *list)
 {
     if ((list->items = realloc(list->items, list->count *
-            sizeof(struct file *))) == NULL) {
+            sizeof(file_t *))) == NULL) {
         return -1;
     }
     list->arr_size = list->count;
@@ -115,10 +114,10 @@ int flist_shrink(struct flist *list)
     return 0;
 }
 
-struct strlist *strlist_init() {
-    struct strlist *list;
+strlist_t *strlist_init() {
+    strlist_t *list;
     
-    if ((list = malloc(sizeof(struct strlist))) == NULL) {
+    if ((list = malloc(sizeof(strlist_t))) == NULL) {
         return NULL;
     }
     if ((list->items = calloc(LIST_START, sizeof(char *))) == NULL) {
@@ -131,7 +130,7 @@ struct strlist *strlist_init() {
     return list;
 }
 
-int strlist_add(struct strlist *list, char *item) {
+int strlist_add(strlist_t *list, char *item) {
     ulong temp;
     
     if (list == NULL) {
