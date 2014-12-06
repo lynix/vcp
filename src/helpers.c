@@ -24,11 +24,11 @@
 #include <stdarg.h>
 #include <string.h>
 
+#define BAR_STEP (100.0/(BAR_WIDTH-2))
+
 
 void print_error(char *msg, ...)
 {
-    /* prints an error message to stderr                                */
-    
     va_list argpointer;
     
     va_start(argpointer, msg);
@@ -42,178 +42,175 @@ void print_error(char *msg, ...)
 
 void print_debug(char *msg, ...)
 {
-    /* prints debugging messages to stdout if debug is set                */
-    
-    va_list argpointer;
     extern opts_t opts;
-    
-    if (opts.debug) {
-        va_start(argpointer, msg);
-        printf("vcp (debug): ");
-        vprintf(msg, argpointer);
-        printf("\n");
-        fflush(stdout);
-    }
+    if (!opts.debug)
+        return;
+
+    va_list argpointer;
+
+    va_start(argpointer, msg);
+    printf("vcp (debug): ");
+    vprintf(msg, argpointer);
+    printf("\n");
+    fflush(stdout);
     
     return;
 }
 
 void print_usage()
 {
-    /* prints copyright and usage information                            */
+    puts("vcp  Copyright (C) 2009, 2010, 2014  lynix <lynix47@gmail.com>\n");
     
-    printf("vcp  Copyright (C) 2009, 2010, 2014  lynix <lynix47@gmail.com>\n\n");
+    puts("This program comes with ABSOLUTELY NO WARRANTY, use at");
+    puts("own risk. This is free software, and you are welcome to");
+    puts("redistribute it under the terms of the GNU General");
+    puts("Public License as published by the Free Software");
+    puts("Foundation, either version 3 of the License, or (at your");
+    puts("option) any later version.\n");
     
-    printf("This program comes with ABSOLUTELY NO WARRANTY, use at\n");
-    printf("own risk. This is free software, and you are welcome to\n");
-    printf("redistribute it under the terms of the GNU General\n");
-    printf("Public License as published by the Free Software\n");
-    printf("Foundation, either version 3 of the License, or (at your\n");
-    printf("option) any later version.\n\n");
-    
-    printf("Usage:    vcp [OPTIONS] SOURCE(S) DESTINATION\n");
-    printf("\n");
-    printf("Behaviour:\n");
-    printf("  -d  delete source(s) on success\n");
-    printf("  -f  overwrite existing files (default: ask)\n");
-    printf("  -k  skip all existing files (default: ask)\n");
-    printf("  -p  only show what would be done\n");
-    printf("  -u  skip identical existing files\n");
-    printf("  -s  ensure each file is synched to disk after write\n");
-    printf("  -t  ignore errors on preserving uid/gid\n");
-    printf("Output control:\n");
-    printf("  -b  display progress bars (default: text)\n");
-    printf("  -B  display progress bars only, no filenames\n");
-    printf("  -q  do not print progress indicators\n");
-    printf("  -Q  do not print progress indicators nor filenames\n");
-    printf("General options:\n");
-    printf("  -h  print usage and license information\n");
-    printf("  -v  be verbose\n");
-    printf("  -D  print debugging messages\n");
-    printf("\n");
-    printf("This version of vcp was built on %s %s.\n", __DATE__,
-            __TIME__);
+    puts("Usage:    vcp [OPTIONS] SOURCE(S) DESTINATION\n");
+    puts("Behaviour:");
+    puts("  -d  delete source(s) on success (like `mv`)");
+    puts("  -f  overwrite existing files (default: ask)");
+    puts("  -k  skip existing files (default: ask)");
+    puts("  -p  no real action, only show what would be done");
+    puts("  -u  skip identical existing files");
+    puts("  -s  ensure each file is synched to disk after write");
+    puts("  -t  ignore errors on preserving uid/gid");
+    puts("Output control:");
+    puts("  -b  display progress bars and file names (default: text)");
+    puts("  -B  display progress bars only, no file names");
+    puts("  -q  do not print progress indicators");
+    puts("  -Q  do not print progress indicators nor file names");
+    puts("General options:");
+    puts("  -h  print usage and license information");
+    puts("  -v  be verbose");
+    puts("  -D  print debugging messages\n");
+    printf("This version of vcp was built on %s %s.\n", __DATE__, __TIME__);
     
     return;
 }
 
 char *strccat(char *a, char *b)
 {
-    /* like strcat() but does not overwrite first argument and takes    *
-     * care of sufficient destination size                                */
-    
-    char *retval;
-    int n,m;
-    
-    if (a == NULL && b == NULL) {
+    if (a == NULL && b == NULL)
         return NULL;
-    }
     
-    if (a == NULL) {
-        n = 0;
-    } else {
-        n = strlen(a);
-    }
-    if (b == NULL) {
-        m = 0;
-    } else {
-        m = strlen(b);
-    }
-        
-    if ((retval = malloc(n+m+1)) == NULL) {
-        return NULL;
-    }
-    for (int i=0; i<n; i++) {
-        retval[i] = a[i];
-    }
-    for (int i=0; i<m; i++) {
-        retval[i+n] = b[i];
-    }    
-    retval[n+m] = '\0';
+    int len_a = (a == NULL) ? 0 : strlen(a);
+    int len_b = (b == NULL) ? 0 : strlen(b);
 
-    return retval;
+    char *result = malloc(len_a + len_b + 1);
+    if (result == NULL)
+        return NULL;
+
+    memcpy(result, a, len_a);
+    memcpy(result + len_a, b, len_b);
+    result[len_a + len_b] = '\0';
+
+    return result;
 }
 
 char *path_str(char *path, char *sub)
 {
-    /* builds a path string with separating '/'                         */
-    
-    char *retval;
+    char *result;
 
-    if (path[strlen(path)-1] != '/') {
-        retval = strccat(path, "/");
-    } else {
-        retval = path;
-    }
-    retval = strccat(retval, sub);
+    if (path[strlen(path)-1] != '/')
+        result = strccat(path, "/");
+    else
+        result = path;
+
+    result = strccat(result, sub);
     
-    return retval;
+    return result;
 }
 
 char *size_str(off_t bytes)
 {
-    /* generates human readable size information; we stick to the 'new'    *
-     * IEC standard, see http://en.wikipedia.org/wiki/Binary_prefix        */
     
-    char *retval, *unit, *buffer;
-    double number;
+    double number = (double)bytes;
+    char *unit = "B";
     
-    buffer = malloc(MAX_SIZE_L);
-
-    if (bytes >= 1099511627776) {
+    if (number >= 1099511627776) {
         unit = "TiB";
         number = (double)bytes / 1099511627776;
-    } else if (bytes >= 1073741824) {
+    } else if (number >= 1073741824) {
         unit = "GiB";
         number = (double)bytes / 1073741824;
-    } else if (bytes >= 1048576) {
+    } else if (number >= 1048576) {
         unit = "MiB";
         number = (double)bytes / 1048576;
-    } else if (bytes >= 1024) {
+    } else if (number >= 1024) {
         unit = "KiB";
         number = (double)bytes / 1024;
-    } else {
-        unit = "B";
-        number = (double)bytes;
     }
     
-    sprintf(buffer, "%.2f ", number);
-    retval = strccat(buffer, unit);
-    free(buffer);
+    char *buffer = malloc(MAX_SIZE_L);
+    if (buffer == NULL)
+        return NULL;
+    snprintf(buffer, MAX_SIZE_L, "%.2f %s", number, unit);
     
-    return retval;
+    return buffer;
 }
 
 char *bar_str(char percent)
 {
-    /* returns a progress bar as string                                    */
-
-    #define BAR_STEP 100.0/(BAR_WIDTH-2)
-
-    char *retval;
-    double temp;
-    short i;
-
-    if ((retval = malloc(BAR_WIDTH+1)) == NULL) {
+    char *result = malloc(BAR_WIDTH+1);
+    if (result == NULL)
         return NULL;
-    }
-    retval[0] = '[';
-    retval[BAR_WIDTH-1] = ']';
-    retval[BAR_WIDTH] = '\0';
 
-    i = 1;
-    temp = BAR_STEP;
+    result[0] = '[';
+    result[BAR_WIDTH-1] = ']';
+    result[BAR_WIDTH] = '\0';
+
+    double temp = BAR_STEP;
+    int i = 1;
     while ((temp <= percent) && (i < BAR_WIDTH-1)) {
-        retval[i] = '#';
+        result[i] = '#';
         i++;
         temp += BAR_STEP;
     }
     while (i < BAR_WIDTH-1) {
-        retval[i] = '-';
+        result[i] = '-';
         i++;
     }
 
-    return retval;
+    return result;
+}
+
+int ask_overwrite(file_t *old, file_t *new)
+{
+    char answer;
+
+    do {
+        printf("overwrite ");
+        if (old->type != SLINK) {
+            printf("%s (%s)", old->src, size_str(old->size));
+        } else {
+            printf("%s (symlink to %s)", old->dst, old->src);
+        }
+        printf(" with ");
+        if (new->type != SLINK) {
+            printf("%s (%s)", new->src, size_str(new->size));
+        } else {
+            printf(" symlink to %s", new->src);
+        }
+        printf(" (Y/n)? ");
+        fflush(stdout);
+
+        answer = getchar();
+        if (answer != '\n') {
+            while (getchar() != '\n') {
+                /* ignore additional chars */
+            }
+        }
+    } while (answer != 'Y' && answer != 'y' && answer != 'n' &&
+                answer != '\n');
+
+    if (answer == '\n' || answer == 'Y' || answer == 'y') {
+        return 1;
+    }
+
+    return 0;
 }
 
 inline void print_progr_bs(char perc, char *bps, char eta_s, char eta_m,

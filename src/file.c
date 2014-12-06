@@ -29,19 +29,14 @@
 
 file_t *f_get(char *fname)
 {
-    file_t *new_item;
-    struct stat filestat;
-    
-    /* check existance */
-    if (!f_exists(fname)) {
+    if (access(fname, F_OK) != 0)
         return NULL;
-    }
     
-    /* create new item */
-    new_item = malloc(sizeof(file_t));
-    if (new_item == NULL) {
+    /* create new file item */
+    file_t *new_item = malloc(sizeof(file_t));
+    if (new_item == NULL)
         return NULL;
-    }
+
     new_item->dst = NULL;
     new_item->size = 0;
     new_item->uid = 0;
@@ -54,6 +49,7 @@ file_t *f_get(char *fname)
     new_item->fname = basename(fname);
 
     /* determine file type, collect attributes */
+    struct stat filestat;
     if (lstat(fname, &filestat) != 0) {
         free(new_item);
         return NULL;
@@ -99,29 +95,26 @@ file_t *f_get(char *fname)
 
 int f_equal(file_t *a, file_t *b)
 {
-    /* compares two given files regarding their size, owner and times   */
+    /* compare file type */
+    if (a->type != b->type)
+        return 0;
 
-    /* compare filetype */
-    if (a->type != b->type) {
+    /* compare size */
+    if (a->size != b->size)
         return 0;
-    }
-    /* compare filesize */
-    if (a->size != b->size) {
-        return 0;
-    }
+
     /* compare owner */
-    if (a->uid != b->uid || a->gid != b->gid) {
+    if (a->uid != b->uid || a->gid != b->gid)
         return 0;
-    }
+
     /* compare modification times */
-    if (a->times.modtime != b->times.modtime) {
+    if (a->times.modtime != b->times.modtime)
         return 0;
-    }
-    /* compare link destination */
+
+    /* if symlink: compare destination */
     if (a->type == SLINK) {
-        if (strcmp(a->src, b->src) != 0) {
+        if (strcmp(a->src, b->src) != 0)
             return 0;
-        }
     }
     
     return 1;
@@ -129,20 +122,20 @@ int f_equal(file_t *a, file_t *b)
 
 int f_clone_attrs(file_t *item)
 {
-    /* applies the attributes of a given file to another                */
-    
-    int retval=0;
+    int retval = 0;
     
     /* set owner uid/gid */
     if (chown(item->dst, item->uid, item->gid) != 0) {
         print_debug("failed to set uid/gid");
         retval = -1;
     }
+
     /* set mode */
     if (chmod(item->dst, item->mode) != 0) {
         print_debug("failed to set mode");
         retval = -1;
     }
+
     /* set atime/mtime */
     if (utime(item->dst, &(item->times)) != 0) {
         print_debug("failed to set atime/mtime");
@@ -152,23 +145,10 @@ int f_clone_attrs(file_t *item)
     return retval;
 }
 
-int f_exists(char *fname)
-{
-    if (access(fname, F_OK) != 0) {
-        errno = 0;
-        return 0;
-    }
-    
-    return 1;
-}
-
 int f_cmpr_dst(const void *a, const void *b)
 {
-    char *str_a;
-    char *str_b;
-
-    str_a = (*((file_t **)a))->dst;
-    str_b = (*((file_t **)b))->dst;
+    char *dst_a = (*((file_t **)a))->dst;
+    char *dst_b = (*((file_t **)b))->dst;
     
-    return strcmp(str_a, str_b);
+    return strcmp(dst_a, dst_b);
 }

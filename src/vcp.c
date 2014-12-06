@@ -25,8 +25,6 @@
 #include <stdlib.h>
 #include <libgen.h>         /* basename(), dirname() */
 #include <unistd.h>         /* symlink(), and others */
-#include <getopt.h>
-#include <ctype.h>
 #include <limits.h>         /* realpath()                               */
 #include <stdlib.h>         /* realpath()                               */
 #include <errno.h>          /* errno, strerror()                        */
@@ -47,23 +45,18 @@ strlist_t       *fail_list;
 char            file_done_flag;
 pthread_mutex_t file_bytes_lock;
 off_t           file_bytes_done;
-off_t           speed_arr[SPEED_N];
 
 /* functions */
-void    init_opts();
 void    fail_append(char *fname, char *error);
 void    list_show();
 void    *do_copy(void *p);
 void    *progress(void *p);
 int     build_list(int argc, int start, char *argv[]);
 int     work_list();
-int     parse_opts(int argc, char *argv[]);
 int     crawl(char *src, char *dst);
-int     ask_overwrite(file_t *old, file_t *new);
 void    copy_file(file_t *item);
 void    copy_dir(file_t *item);
 void    copy_link(file_t *item);
-off_t   speed_avg(off_t spd);
 
 
 int main(int argc, char *argv[])
@@ -71,11 +64,11 @@ int main(int argc, char *argv[])
     int argstart;
     
     /* initialize options, set umask */
-    init_opts();
+    init_opts(&opts);
     umask(0);
     
     /* parse cmdline options */
-    if ((argstart = parse_opts(argc, argv)) == -1) {
+    if ((argstart = parse_opts(&opts, argc, argv)) == -1) {
         exit(EXIT_FAILURE);
     }
     if (argc < 3) {
@@ -151,7 +144,7 @@ int build_list(int argc, int start, char *argv[])
     }
     
     /* create copy list */
-    if ((copy_list = flist_init()) == NULL) {
+    if ((copy_list = flist_new()) == NULL) {
         print_debug("failed to create copy list");
         return -1;
     }
@@ -196,7 +189,8 @@ int build_list(int argc, int start, char *argv[])
     }
 
     /* finally sort list by destination */
-    flist_sort_dst(copy_list);
+    flist_shrink(copy_list);
+    flist_sort(copy_list);
     
     return 0;
 }
@@ -324,7 +318,7 @@ int work_list()
     char *tempstr;
 
     /* initialize fail-list */
-    if ((fail_list = strlist_init()) == NULL) {
+    if ((fail_list = strlist_new()) == NULL) {
         print_error("failed to create fail_list");
         return -1;
     }
@@ -585,164 +579,6 @@ void *progress(void *p)
     return NULL;
 }
 
-int ask_overwrite(file_t *old, file_t *new)
-{
-    /* prints a confirmation dialog for file overwriting                */
-    
-    char answer;
-    
-    do {
-        printf("overwrite ");
-        if (old->type != SLINK) {
-            printf("%s (%s)", old->src, size_str(old->size));
-        } else {
-            printf("%s (symlink to %s)", old->dst, old->src);
-        }
-        printf(" with ");
-        if (new->type != SLINK) {
-            printf("%s (%s)", new->src, size_str(new->size));
-        } else {
-            printf(" symlink to %s", new->src);
-        }
-        printf(" (Y/n)? ");
-        fflush(stdout);
-        
-        answer = getchar();
-        if (answer != '\n') {
-            while (getchar() != '\n') {
-                /* ignore additional chars */
-            }
-        }
-    } while (answer != 'Y' && answer != 'y' && answer != 'n' &&
-                answer != '\n');
-    
-    if (answer == '\n' || answer == 'Y' || answer == 'y') {
-        return 1;
-    }
-        
-    return 0;
-}
-
-void init_opts()
-{
-    /* initializes the global options structure                            */
-    
-    opts.bars = 0;
-    opts.force = 0;
-    opts.filenames = 1;
-    opts.sync = 0;
-    opts.delete = 0;
-    opts.keep = 0;
-    opts.quiet = 0;
-    opts.verbose = 0;
-    opts.update = 0;
-    opts.pretend = 0;
-    opts.debug = 0;
-    opts.ignore_uid_err = 0;
-
-    return;
-}
-
-int parse_opts(int argc, char *argv[])
-{
-    /* parses command-line options and update opts structure            */
-    
-    char c;
-    extern int optind, optopt, opterr;
-    
-    opterr = 0;
-    
-    while ((c = getopt(argc, argv, "bdfhkpqstuvDBQ")) != -1) {
-        switch (c) {
-            case 'b':
-                opts.bars = 1;
-                break;
-            case 'B':
-                opts.bars = 1;
-                opts.filenames = 0;
-                break;
-            case 'f':
-                if (opts.keep == 0) {
-                    opts.force = 1;
-                } else {
-                    print_error("no -f and -k at the same time\n");
-                    return -1;
-                }
-                break;
-            case 'k':
-                if (opts.force == 0) {
-                    opts.keep = 1;
-                } else {
-                    print_error("no -f and -k at the same time\n");
-                    return -1;
-                }
-                break;
-            case 's':
-                opts.sync = 1;
-                break;
-            case 't':
-                opts.ignore_uid_err = 1;
-                break;
-            case 'p':
-                opts.pretend = 1;
-                break;
-            case 'q':
-                opts.quiet = 1;
-                break;
-            case 'Q':
-                opts.quiet = 1;
-                opts.filenames = 0;
-                break;
-            case 'd':
-                opts.delete = 1;
-                break;
-            case 'h':
-                print_usage();
-                exit(EXIT_SUCCESS);
-            case 'u':
-                opts.update = 1;
-                break;
-            case 'v':
-                opts.verbose = 1;
-                break;
-            case 'D':
-                opts.debug = 1;
-                break;
-            case '?':
-                if (isprint(optopt)) {
-                    print_error("unknown option \"-%c\".\nTry -h for help.",
-                                optopt);
-                } else {
-                    print_error("unknown option character \"\\x%x\".\nTry -h for help.",
-                                optopt);
-                }
-                return -1;
-            default:
-                return -1;
-        }
-    }
-          
-    return optind;
-}
-
-off_t speed_avg(off_t spd)
-{
-    /* takes new current speed, adds it to the global array and            *
-     * calculates the arithmetic average                                */
-    
-    /*ulong sum=0;
-    
-    for (int i=0; i<SPEED_N-1; i++) {
-        speeds[i] = speeds[i+1];
-        sum += speeds[i];
-    }
-    speeds[SPEED_N-1] = spd;
-    sum += spd;
-    
-    return sum / SPEED_N;*/
-    return 0;
-}
-
 void fail_append(char *fname, char *error)
 {
     char *errmsg;
@@ -817,7 +653,7 @@ void copy_file(file_t *item)
 void copy_link(file_t *item)
 {
     /* remove evtl. existing one */
-    if (f_exists(item->dst)) {
+    if (access(item->dst, F_OK) == 0) {
         if (remove(item->dst) != 0) {
             fail_append(item->dst, "unable to delete link");
         }

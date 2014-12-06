@@ -21,8 +21,8 @@
 
 #define _XOPEN_SOURCE 500
 
-#include <sys/types.h>                  /* uid_t, gid_t, etc.       */
-#include <utime.h>                      /* struct utimbuf           */
+#include <sys/types.h>                  // uid_t, gid_t, etc.
+#include <utime.h>                      // struct utimbuf
 
 typedef enum { RFILE, RDIR, SLINK } ftype_t;
 
@@ -39,10 +39,17 @@ typedef struct {
     char    done;
 } file_t;
 
+
+// create file_t struct from given path
 file_t  *f_get(char *fname);
+
+// compare given files regarding size, owner and timestamps
 int     f_equal(file_t *a, file_t *b);
-int     f_exists(char *fname);
+
+// transfer file attributes from source to destination on given item
 int     f_clone_attrs(file_t *item);
+
+// file_t comparator implementation for qsort()
 int     f_cmpr_dst(const void *a, const void *b);
 
 #endif

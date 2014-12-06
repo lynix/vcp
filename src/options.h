@@ -21,7 +21,6 @@
 
 #define BUFFS 1048576       /* 1MiB buffer for read() and write()       */
 #define BUFFM 10            /* buffer multiplier, see work_list()       */
-#define SPEED_N 5           /* speed middle calculation                 */
 #define BAR_WIDTH 20        /* progress bar width (characters)          */
 #define MAX_SIZE_L 15       /* maximum length of size string, numbers   */
 
@@ -40,5 +39,12 @@ typedef struct {
     char debug;
     char ignore_uid_err;
 } opts_t;
+
+
+// initialize given options structure
+void init_opts(opts_t *opts);
+
+// parse command line, fill options structure
+int parse_opts(opts_t *opts, int argc, char *argv[]);
 
 #endif

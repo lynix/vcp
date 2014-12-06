@@ -22,59 +22,59 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define INIT_SIZE 5L
 
-flist_t *flist_init() {
-    flist_t *list;
-    
-    if ((list = malloc(sizeof(flist_t))) == NULL) {
+
+flist_t *flist_new()
+{
+    flist_t *list = malloc(sizeof(flist_t));
+    if (list == NULL)
         return NULL;
-    }
-    if ((list->items = calloc(LIST_START, sizeof(file_t *))) ==
-            NULL) {
+
+    list->items = calloc(INIT_SIZE, sizeof(file_t *));
+    if (list->items == NULL) {
         free(list);
         return NULL;
     }
+
     list->count = 0;
     list->count_f = 0;
     list->size = 0;
     list->bytes_done = 0;
-    list->arr_size = LIST_START;
+    list->arr_size = INIT_SIZE;
 
     return list;
 }
 
-int flist_add(flist_t *list, file_t *item) {
-    ulong  temp_c;
-    off_t temp_s;
-    
-    if (list == NULL) {
+int flist_add(flist_t *list, file_t *item)
+{
+    if (list == NULL)
         return -1;
-    }
     
-    /* check fill state, expand if necessary (we grow with 2^x here) */
+    /* expand if necessary (we grow with 2^x here) */
     if (list->count == list->arr_size) {
-        if ((list->items = realloc(list->items, list->arr_size * 2L * 
-                sizeof(file_t *))) == NULL) {
+        list->items = realloc(list->items, list->arr_size*2L*sizeof(file_t *));
+        if (list->items == NULL)
             return -1;
-        }
         list->arr_size *= 2L;
     }
     
-    /* insert new item, update counters (with overflow check) */
+    /* insert new item, update counters */
     list->items[list->count] = item;
-    temp_c = list->count;
-    temp_s = list->size;
+    ulong temp_c = list->count;
+    off_t temp_s = list->size;
     list->size += item->size;
     list->count++;
     if (list->count <= temp_c || list->size < temp_s) {
+        /* overflow */
         list->count = temp_c;
         list->size = temp_s;
         list->items[list->count] = NULL;
         return -1;
     }
-    if (item->type == RFILE) {
+
+    if (item->type == RFILE)
         list->count_f++;
-    }
     
     return 0;
 }
@@ -91,65 +91,58 @@ file_t *flist_search_src(flist_t *list, file_t *item)
     return NULL;
 }
 
-void flist_sort_dst(flist_t *list)
+inline void flist_sort(flist_t *list)
 {
-    if (flist_shrink(list) != 0) {
-        return;
-    }
-
-    qsort(list->items, list->arr_size, sizeof(file_t *),
-            f_cmpr_dst);
-
-    return;
+    qsort(list->items, list->arr_size, sizeof(file_t *), f_cmpr_dst);
 }
 
 int flist_shrink(flist_t *list)
 {
-    if ((list->items = realloc(list->items, list->count *
-            sizeof(file_t *))) == NULL) {
+    list->items = realloc(list->items, list->count * sizeof(file_t *));
+    if (list->items == NULL)
         return -1;
-    }
+
     list->arr_size = list->count;
 
     return 0;
 }
 
-strlist_t *strlist_init() {
-    strlist_t *list;
-    
-    if ((list = malloc(sizeof(strlist_t))) == NULL) {
+strlist_t *strlist_new()
+{
+    strlist_t *list = malloc(sizeof(strlist_t));
+    if (list == NULL)
         return NULL;
-    }
-    if ((list->items = calloc(LIST_START, sizeof(char *))) == NULL) {
+
+    list->items = calloc(INIT_SIZE, sizeof(char *));
+    if (list->items == NULL) {
         free(list);
         return NULL;
     }
+
     list->count = 0;
-    list->arr_size = LIST_START;
+    list->arr_size = INIT_SIZE;
 
     return list;
 }
 
-int strlist_add(strlist_t *list, char *item) {
-    ulong temp;
-    
-    if (list == NULL) {
+int strlist_add(strlist_t *list, char *item)
+{
+    if (list == NULL)
         return -1;
-    }
     
-    /* check fill state, expand if necessary (we grow with 2^x here) */
+    /* expand if necessary (we grow with 2^x here) */
     if (list->count == list->arr_size) {
-        if ((list->items = realloc(list->items, list->arr_size * 2L * 
-                sizeof(char *))) == NULL) {
+        list->items = realloc(list->items, list->arr_size *2L* sizeof(char *));
+        if (list->items == NULL)
             return -1;
-        }
         list->arr_size *= 2L;
     }
     
-    /* insert new item, update counter (with overflow check) */
+    /* insert new item, update counter */
     list->items[list->count] = item;
-    temp = list->count++;
+    ulong temp = list->count++;
     if (list->count <= temp) {
+        /* overflow */
         list->count--;
         return -1;
     }

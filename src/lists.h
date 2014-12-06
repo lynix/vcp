@@ -19,8 +19,6 @@
 #ifndef _LISTS_H
 #define _LISTS_H
 
-#define LIST_START 5L
-
 #include "file.h"
 
 #include <sys/types.h>
@@ -36,11 +34,21 @@ typedef struct {
     file_t  **items;
 } flist_t;
 
-flist_t *flist_init();
+// create new file list
+flist_t *flist_new();
+
+// find file item by given source path in given file list
 file_t  *flist_search_src(flist_t *list, file_t *item);
+
+// add given file item to given file list
 int     flist_add(flist_t *list, file_t *item);
+
+// shrink given file list structure allocation to required size
 int     flist_shrink(flist_t *list);
-void    flist_sort_dst(flist_t *list);
+
+// sort given file list (by destination path)
+void    flist_sort(flist_t *list);
+
 
 typedef struct {
     ulong   count;
@@ -48,7 +56,10 @@ typedef struct {
     char    **items;
 } strlist_t;
 
-strlist_t   *strlist_init();
+// create new string list
+strlist_t   *strlist_new();
+
+// add given string to given string list
 int         strlist_add(strlist_t *list, char *item);
 
 #endif
