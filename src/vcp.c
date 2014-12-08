@@ -128,6 +128,7 @@ int build_list(int argc, int start, char *argv[])
             }
         }
         f_delete(f_item);
+        f_item = NULL;
     } else {
         errno = 0;
         if (argfcount > 1) {
