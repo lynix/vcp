@@ -27,70 +27,76 @@
 #include <errno.h>                      /* clear errno if !F_OK     */
 
 
-file_t *f_get(char *fname)
+file_t *f_new(char *fname)
 {
     if (access(fname, F_OK) != 0)
         return NULL;
     
-    /* create new file item */
-    file_t *new_item = malloc(sizeof(file_t));
-    if (new_item == NULL)
-        return NULL;
-
-    new_item->dst = NULL;
-    new_item->size = 0;
-    new_item->uid = 0;
-    new_item->gid = 0;
-    new_item->mode = 0;
-    new_item->done = 0;
-    
-    /* set source names */
-    new_item->src = fname;
-    new_item->fname = basename(fname);
-
     /* determine file type, collect attributes */
-    struct stat filestat;
-    if (lstat(fname, &filestat) != 0) {
-        free(new_item);
+    struct stat fstat;
+    if (lstat(fname, &fstat) != 0)
         return NULL;
-    }
-    if (S_ISLNK(filestat.st_mode)) {
+
+    /* create file_t object */
+    file_t *f_item = malloc(sizeof(file_t));
+    if (f_item == NULL)
+        return NULL;
+
+    /* fill type-independent fields */
+    f_item->dst     = NULL;
+    f_item->size    = 0;
+    f_item->uid     = 0;
+    f_item->gid     = 0;
+    f_item->mode    = 0;
+    f_item->done    = 0;
+    f_item->src     = fname;
+    f_item->fname   = basename(fname);
+
+    /* fill type-dependent fields */
+    if (S_ISLNK(fstat.st_mode)) {
         /* symlink */
-        new_item->type = SLINK;
-        new_item->dst = new_item->src;
-        new_item->src = malloc(filestat.st_size + 1);
-        if (readlink(fname, new_item->src, filestat.st_size) !=
-                        filestat.st_size) {
-            free(new_item);
+        f_item->type    = SLINK;
+        f_item->dst     = f_item->src;
+        f_item->src     = malloc(fstat.st_size + 1);
+        if (readlink(fname, f_item->src, fstat.st_size) != fstat.st_size) {
+            free(f_item);
             return NULL;
         }
-        new_item->src[filestat.st_size] = '\0';
+        f_item->src[fstat.st_size] = '\0';
     } else {
-        /* POSIX: uid, modes etc. not defined by lstat(), use stat()    */
-        if (stat(fname, &filestat) != 0) {
-            free(new_item);
+        /* POSIX: uid, modes etc. not defined by lstat(), use stat() */
+        if (stat(fname, &fstat) != 0) {
+            free(f_item);
             return NULL;
         }
-        new_item->uid = filestat.st_uid;
-        new_item->gid = filestat.st_gid;
-        new_item->mode = filestat.st_mode;
-        new_item->times.actime = filestat.st_atime;
-        new_item->times.modtime = filestat.st_mtime;
-        if (S_ISREG(filestat.st_mode)) {
+        f_item->uid             = fstat.st_uid;
+        f_item->gid             = fstat.st_gid;
+        f_item->mode            = fstat.st_mode;
+        f_item->times.actime    = fstat.st_atime;
+        f_item->times.modtime   = fstat.st_mtime;
+        if (S_ISREG(fstat.st_mode)) {
             /* regular file */
-            new_item->type = RFILE;
-            new_item->size = filestat.st_size;
-        } else if (S_ISDIR(filestat.st_mode)) {
+            f_item->type = RFILE;
+            f_item->size = fstat.st_size;
+        } else if (S_ISDIR(fstat.st_mode)) {
             /* directory */
-            new_item->type = RDIR;
+            f_item->type = RDIR;
         } else {
             /* unknown object, abort */
-            free(new_item);
+            free(f_item);
             return NULL;
         }
     }
     
-    return new_item;
+    return f_item;
+}
+
+void f_delete(file_t *file)
+{
+    if (file->type == SLINK)
+        free(file->src);
+
+    free(file);
 }
 
 int f_equal(file_t *a, file_t *b)
@@ -147,8 +153,8 @@ int f_clone_attrs(file_t *item)
 
 int f_cmpr_dst(const void *a, const void *b)
 {
-    char *dst_a = (*((file_t **)a))->dst;
-    char *dst_b = (*((file_t **)b))->dst;
+    file_t *file_a = (file_t *)a;
+    file_t *file_b = (file_t *)b;
     
-    return strcmp(dst_a, dst_b);
+    return strcmp(file_a->dst, file_b->dst);
 }

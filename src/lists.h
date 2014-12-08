@@ -38,6 +38,9 @@ typedef struct {
 // create new file list
 flist_t *flist_new();
 
+// delete given file list
+void    flist_delete(flist_t *list);
+
 // find file item by given source path in given file list
 file_t  *flist_search_src(flist_t *list, file_t *item);
 
@@ -62,6 +65,9 @@ typedef struct {
 
 // create new string list
 strlist_t   *strlist_new();
+
+// delete given string list
+void        strlist_delete(strlist_t *list);
 
 // add given string to given string list
 int         strlist_add(strlist_t *list, char *item);

@@ -38,33 +38,43 @@ flist_t *flist_new()
         return NULL;
     }
 
-    list->count = 0;
-    list->count_f = 0;
-    list->size = 0;
-    list->bytes_done = 0;
-    list->arr_size = INIT_SIZE;
+    list->count         = 0;
+    list->count_f       = 0;
+    list->size          = 0;
+    list->bytes_done    = 0;
+    list->arr_size      = INIT_SIZE;
 
     return list;
 }
 
-int flist_add(flist_t *list, file_t *item)
+void flist_delete(flist_t *list)
+{
+    for (ulong i=0; i<list->count; i++)
+        f_delete(list->items[i]);
+
+    free(list->items);
+    free(list);
+}
+
+int flist_add(flist_t *list, file_t *file)
 {
     if (list == NULL)
         return -1;
     
     /* expand if necessary (we grow with 2^x here) */
     if (list->count == list->arr_size) {
-        list->items = realloc(list->items, list->arr_size*2L*sizeof(file_t *));
+        ulong size_new = list->arr_size * 2L * sizeof(file_t *);
+        list->items = realloc(list->items, size_new);
         if (list->items == NULL)
             return -1;
         list->arr_size *= 2L;
     }
     
     /* insert new item, update counters */
-    list->items[list->count] = item;
+    list->items[list->count] = file;
     ulong temp_c = list->count;
     off_t temp_s = list->size;
-    list->size += item->size;
+    list->size += file->size;
     list->count++;
     if (list->count <= temp_c || list->size < temp_s) {
         /* overflow */
@@ -74,7 +84,7 @@ int flist_add(flist_t *list, file_t *item)
         return -1;
     }
 
-    if (item->type == RFILE)
+    if (file->type == RFILE)
         list->count_f++;
     
     return 0;
@@ -165,10 +175,19 @@ strlist_t *strlist_new()
         return NULL;
     }
 
-    list->count = 0;
-    list->arr_size = INIT_SIZE;
+    list->count     = 0;
+    list->arr_size  = INIT_SIZE;
 
     return list;
+}
+
+void strlist_delete(strlist_t *list)
+{
+    for (ulong i=0; i<list->count; i++)
+        free(list->items[i]);
+
+    free(list->items);
+    free(list);
 }
 
 int strlist_add(strlist_t *list, char *item)
@@ -178,7 +197,8 @@ int strlist_add(strlist_t *list, char *item)
     
     /* expand if necessary (we grow with 2^x here) */
     if (list->count == list->arr_size) {
-        list->items = realloc(list->items, list->arr_size *2L* sizeof(char *));
+        ulong new_size = list->arr_size * 2L * sizeof(char *);
+        list->items = realloc(list->items, new_size);
         if (list->items == NULL)
             return -1;
         list->arr_size *= 2L;

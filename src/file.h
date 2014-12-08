@@ -41,7 +41,10 @@ typedef struct {
 
 
 // create file_t struct from given path
-file_t  *f_get(char *fname);
+file_t  *f_new(char *fname);
+
+// delete given file_t struct
+void    f_delete(file_t *file);
 
 // compare given files regarding size, owner and timestamps
 int     f_equal(file_t *a, file_t *b);
