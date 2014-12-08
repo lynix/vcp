@@ -186,15 +186,15 @@ int ask_overwrite(file_t *old, file_t *new)
     do {
         printf("overwrite ");
         if (old->type != SLINK) {
-            printf("%s (%s)", old->src, size_str(old->size));
+            printf("%s (%s)\n", old->src, size_str(old->size));
         } else {
-            printf("%s (symlink to %s)", old->dst, old->src);
+            printf("%s (symlink to %s)\n", old->dst, old->src);
         }
-        printf(" with ");
+        printf("     with ");
         if (new->type != SLINK) {
-            printf("%s (%s)", new->src, size_str(new->size));
+            printf("%s (%s)\n", new->src, size_str(new->size));
         } else {
-            printf(" symlink to %s", new->src);
+            printf(" symlink to %s\n", new->src);
         }
         printf(" (Y/n)? ");
         fflush(stdout);
