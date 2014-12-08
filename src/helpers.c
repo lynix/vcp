@@ -62,14 +62,14 @@ void print_usage()
 {
     puts("vcp  Copyright (C) 2009, 2010, 2014  lynix <lynix47@gmail.com>\n");
     
-    puts("This program comes with ABSOLUTELY NO WARRANTY, use at");
-    puts("own risk. This is free software, and you are welcome to");
-    puts("redistribute it under the terms of the GNU General");
-    puts("Public License as published by the Free Software");
-    puts("Foundation, either version 3 of the License, or (at your");
+    puts("This program comes with ABSOLUTELY NO WARRANTY, use at own risk.");
+    puts("is free software, and you are welcome to redistribute it under the");
+    puts("terms of the GNU General Public License as published by the Free");
+    puts("Software Foundation, either version 3 of the License, or (at your");
     puts("option) any later version.\n");
     
     puts("Usage:    vcp [OPTIONS] SOURCE(S) DESTINATION\n");
+
     puts("Behaviour:");
     puts("  -d  delete source(s) on success (like `mv`)");
     puts("  -f  overwrite existing files (default: ask)");
@@ -87,6 +87,7 @@ void print_usage()
     puts("  -h  print usage and license information");
     puts("  -v  be verbose");
     puts("  -D  print debugging messages\n");
+
     printf("This version of vcp was built on %s %s.\n", __DATE__, __TIME__);
     
     return;
