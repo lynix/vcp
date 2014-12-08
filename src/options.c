@@ -25,18 +25,18 @@
 
 void init_opts(opts_t *opts)
 {
-    opts->bars = 0;
-    opts->force = 0;
-    opts->filenames = 1;
-    opts->sync = 0;
-    opts->delete = 0;
-    opts->keep = 0;
-    opts->quiet = 0;
-    opts->verbose = 0;
-    opts->update = 0;
-    opts->pretend = 0;
-    opts->debug = 0;
-    opts->ignore_uid_err = 0;
+    opts->bars              = 0;
+    opts->force             = 0;
+    opts->filenames         = 1;
+    opts->sync              = 0;
+    opts->delete            = 0;
+    opts->keep              = 0;
+    opts->quiet             = 0;
+    opts->verbose           = 0;
+    opts->update            = 0;
+    opts->pretend           = 0;
+    opts->debug             = 0;
+    opts->ignore_uid_err    = 0;
 
     return;
 }

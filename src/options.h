@@ -26,18 +26,18 @@
 
 
 typedef struct {
-    char bars;
-    char force;
-    char filenames;
-    char sync;
-    char delete;
-    char keep;
-    char quiet;
-    char update;
-    char verbose;
-    char pretend;
-    char debug;
-    char ignore_uid_err;
+    unsigned int bars            :1;
+    unsigned int force           :1;
+    unsigned int filenames       :1;
+    unsigned int sync            :1;
+    unsigned int delete          :1;
+    unsigned int keep            :1;
+    unsigned int quiet           :1;
+    unsigned int update          :1;
+    unsigned int verbose         :1;
+    unsigned int pretend         :1;
+    unsigned int debug           :1;
+    unsigned int ignore_uid_err  :1;
 } opts_t;
 
 
