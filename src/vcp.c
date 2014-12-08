@@ -37,6 +37,7 @@
 #include "lists.h"          /* my list implementations                  */
 #include "helpers.h"        /* little helper functions                  */
 #include "options.h"        /* global options, options struct           */
+#include "copy.h"
 
 /* globals */
 opts_t          opts;
@@ -52,31 +53,27 @@ void    *progress_thread(void *p);
 int     build_list(int argc, int start, char *argv[]);
 int     work_list();
 int     crawl(char *src, char *dst);
-void    copy_file(file_t *file);
-void    copy_dir(file_t *file);
-void    copy_link(file_t *file);
 
 
 int main(int argc, char *argv[])
 {
-    int argstart;
-    
     /* initialize options, set umask */
     init_opts(&opts);
     umask(0);
     
-    /* parse cmdline options */
-    if ((argstart = parse_opts(&opts, argc, argv)) == -1) {
-        exit(EXIT_FAILURE);
-    }
     if (argc < 3) {
         print_error("insufficient arguments. Try -h for help.");
         exit(EXIT_FAILURE);
     }
     
-    /* parse cmdline files, build list */
+    /* parse command line options */
+    int argstart = parse_opts(&opts, argc, argv);
+    if (argstart < 0)
+        exit(EXIT_FAILURE);
+
+    /* parse argument files, build copy list */
     if (opts.debug) {
-        printf("Collecting file information...\n");
+        puts("Collecting file information...");
         fflush(stdout);
     }
     if (build_list(argc, argstart, argv) != 0) {
@@ -85,21 +82,20 @@ int main(int argc, char *argv[])
     }
 
     /* evtl. print summary, exit if in pretend mode */
-    if (opts.verbose || opts.pretend) {
+    if (opts.verbose || opts.pretend)
         flist_print(copy_list, &opts);
-    }
     if (opts.pretend) {
-        free(copy_list);
+        flist_delete(copy_list);
         exit(EXIT_SUCCESS);
     }
     
-    /* work off the list */
+    /* process copy list */
     if (work_list() != 0) {
-        free(copy_list);
+        flist_delete(copy_list);
         exit(EXIT_FAILURE);
     }
     
-    free(copy_list);
+    flist_delete(copy_list);
     exit(EXIT_SUCCESS);
 }
 
@@ -124,14 +120,14 @@ int build_list(int argc, int start, char *argv[])
     
     /* logic checking (do not copy file/dir over dir/file) */
     argfcount = argc-start-1;
-    if ((f_item = f_get(dest)) != NULL) {
+    if ((f_item = f_new(dest)) != NULL) {
         if (f_item->type == RFILE) {
             if (argfcount != 1) {
                 print_error("unable to copy multiple items to one file");
                 return -1;
             }
         }
-        free(f_item);
+        f_delete(f_item);
     } else {
         errno = 0;
         if (argfcount > 1) {
@@ -152,7 +148,7 @@ int build_list(int argc, int start, char *argv[])
         item = realpath(argv[start], NULL);
         item = realloc(item, strlen(item)+1);
         if (crawl(item, dest) != 0) {
-            free(copy_list);
+            flist_delete(copy_list);
             return -1;
         }
     } else {
@@ -162,7 +158,7 @@ int build_list(int argc, int start, char *argv[])
             item = realloc(item, strlen(item)+1);
             /* crawl item */
             if (crawl(item, path_str(dest, basename(item))) != 0) {
-                free(copy_list);
+                flist_delete(copy_list);
                 return -1;
             }
         }
@@ -182,7 +178,7 @@ int build_list(int argc, int start, char *argv[])
     /* check if something left to copy at all */
     if (copy_list->count == 0) {
         printf("vcp: no items to copy.\n");
-        free(copy_list);
+        flist_delete(copy_list);
         exit(EXIT_SUCCESS);
     }
 
@@ -203,14 +199,14 @@ int crawl(char *src, char *dst)
     file_t *f_dst;
     
     /* check source access, prepare file struct */
-    if ((f_src = f_get(src)) == NULL) {
+    if ((f_src = f_new(src)) == NULL) {
         print_error("failed to open '%s': %s", src, strerror(errno));
         return -1;
     }
     f_src->dst = dst;
 
     /* collision handling */
-    if ((f_dst = f_get(dst)) != NULL) {
+    if ((f_dst = f_new(dst)) != NULL) {
         if (f_src->type != RDIR && f_dst->type != RDIR) {
             if (opts.keep) {
                 f_src->done = 1;
@@ -529,79 +525,4 @@ void *progress_thread(void *p)
     putchar('\n');
     
     return NULL;
-}
-
-void copy_dir(file_t *file)
-{
-    if (mkdir(file->dst, file->mode) != 0) {
-        fail_append(fail_list, file->dst, "unable to create directory");
-        file->done = 0;
-    } else {
-        file->done = 1;
-    }
-
-    return;
-}
-
-void copy_file(file_t *file)
-{
-    /* initialize globals */
-    if (pthread_mutex_init(&file_bytes_lock, NULL) != 0) {
-        fail_append(fail_list, file->dst,
-                "failed to initialize bytes_done mutex");
-        return;
-    }
-    file_bytes_done = 0;
-    file_done_flag = 0;
-    
-    pthread_t copy_thrd, progr_thrd;
-    char join_progr = 0;
-
-    /* spawn copy worker thread */
-    if (pthread_create(&copy_thrd, NULL, copy_thread, file) != 0) {
-        fail_append(fail_list, file->dst, "unable to spawn copy-thread");
-        pthread_mutex_destroy(&file_bytes_lock);
-        return;
-    }
-
-    /* spawn progress thread */
-    if (!opts.quiet && file->size > BUFFS*BUFFM) {
-        if (pthread_create(&progr_thrd, NULL, progress_thread, file) != 0) {
-            print_error("unable to spawn progress-thread (quiet copy)");
-        } else {
-            join_progr = 1;
-        }
-    }
-
-    pthread_join(copy_thrd, NULL);
-    if (join_progr) {
-        /* signal progress thread */
-        file_done_flag = 1;
-        pthread_join(progr_thrd, NULL);
-    }
-
-    /* account global progress */
-    copy_list->bytes_done += file->size;
-
-    /* clean up */
-    pthread_mutex_destroy(&file_bytes_lock);
-
-    return;
-}
-
-void copy_link(file_t *file)
-{
-    /* remove evtl. existing one */
-    if (access(file->dst, F_OK) == 0) {
-        if (remove(file->dst) != 0) {
-            fail_append(fail_list, file->dst, "unable to delete link");
-        }
-    }
-    /* create new link */
-    if (symlink(file->src, file->dst) != 0) {
-        fail_append(fail_list, file->dst, "unable to create symlink");
-        file->done = 0;
-    } else {
-        file->done = 1;
-    }
 }
