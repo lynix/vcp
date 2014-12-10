@@ -90,10 +90,10 @@ int flist_add(flist_t *list, file_t *file)
     return 0;
 }
 
-file_t *flist_search_src(flist_t *list, file_t *item)
+file_t *flist_search_src(flist_t *list, char *src)
 {
     for (ulong i=0; i < list->count; i++) {
-        if (strcmp(list->items[i]->src, item->src) == 0 &&
+        if (strcmp(list->items[i]->src, src) == 0 &&
                 list->items[i]->type != SLINK) {
             return list->items[i];
         }

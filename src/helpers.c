@@ -114,16 +114,55 @@ char *strccat(char *a, char *b)
 
 char *path_str(char *path, char *sub)
 {
-    char *result;
+    int len_p = strlen(path);
+    int len_s = strlen(sub);
 
-    if (path[strlen(path)-1] != '/')
-        result = strccat(path, "/");
-    else
-        result = path;
+    char *result = malloc(len_p + len_s + 2);
+    memcpy(result, path, len_p);
+    memcpy(result + len_p + 1, sub, len_s);
 
-    result = strccat(result, sub);
+    result[len_p] = '/';
+    result[len_p+len_s+1] = '\0';
     
     return result;
+}
+
+char *clean_path(char *path)
+{
+    /* remove trailing '/' */
+    size_t len = strlen(path);
+    if (path[len-1] == '/')
+        path[len-1] = '\0';
+
+    /* find start of last path component */
+    char *base = path_base(path);
+
+    /* if none found: dir is CWD, otherwise use everything left */
+    char *dir;
+    if (base == path) {
+        dir = ".";
+    } else {
+        dir = path;
+        *(base-1) = '\0';
+    }
+    dir = realpath(dir, NULL);
+
+    char *result = path_str(dir, base);
+    free(dir);
+
+    return result;
+}
+
+char *path_base(char *path)
+{
+    char *ret = path;
+    for (char *p=path; *p!='\0'; p++)
+        if (*p == '/')
+            ret = p + 1;
+    if (*ret == '\0')
+        ret = path;
+
+    return ret;
 }
 
 char *size_str(off_t bytes)
@@ -188,13 +227,13 @@ int ask_overwrite(file_t *old, file_t *new)
         if (old->type != SLINK) {
             printf("%s (%s)\n", old->src, size_str(old->size));
         } else {
-            printf("%s (symlink to %s)\n", old->dst, old->src);
+            printf("%s (symlink to %s)\n", old->dst, old->ldst);
         }
         printf("     with ");
         if (new->type != SLINK) {
             printf("%s (%s)\n", new->src, size_str(new->size));
         } else {
-            printf(" symlink to %s\n", new->src);
+            printf(" symlink to %s\n", new->ldst);
         }
         printf(" (Y/n)? ");
         fflush(stdout);
@@ -247,7 +286,7 @@ inline void print_progr_bs(char perc, char *bps, char eta_s, char eta_m,
 inline void print_progr_bm(char perc_f, char perc_t, char *bps, char eta_s,
                     char eta_m, char eta_h)
 {
-    printf("\rFile: %s %3d%% @ %s/s  Total: %s %3d%% ETA %02d:%02d:%02d   ",
+    printf("\rFile: %s %3d%% @ %s/s  |  Total: %s %3d%% ETA %02d:%02d:%02d   ",
             bar_str(perc_f), perc_f, bps, bar_str(perc_t), perc_t,
             eta_h, eta_m, eta_s);
     
@@ -266,7 +305,7 @@ inline void print_progr_ps(char perc, char *size, char *bps, char eta_s,
 inline void print_progr_pm(char perc_f, char perc_t, char *size_f, char *size_t,
                     char *bps, char eta_s, char eta_m, char eta_h)
 {
-    printf("\rFile: %3d%% of %s @ %s/s  Total: %3d%% of %s ETA %02d:%02d:%02d   ",
+    printf("\rFile: %3d%% of %s @ %s/s  |  Total: %3d%% of %s ETA %02d:%02d:%02d   ",
             perc_f, size_f, bps, perc_t, size_t, eta_h, eta_m, eta_s);
     
     return;

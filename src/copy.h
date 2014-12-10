@@ -20,16 +20,21 @@
 #define _COPY_H
 
 #include "file.h"
+#include "lists.h"
 
 
-// copy regular file given as file_t
-void    copy_file(file_t *file);
+// copy regular file given as file_t, use supplied buffer for I/O
+int copy_file(file_t *file, flist_t *flist, strlist_t *fail_list, opts_t *opts,
+        char *buffer, unsigned int buff_size);
 
 // 'copy' directory given as file_t, i.e. create destination directory
-void    copy_dir(file_t *file);
+int copy_dir(file_t *file, opts_t *opts, strlist_t *fail_list);
 
 // copy symlink given as file_t
-void    copy_link(file_t *file);
+int copy_link(file_t *file, strlist_t *fail_list);
+
+// display transfer progress for given file, threaded
+void *progress_thread(void *arg);
 
 
 #endif

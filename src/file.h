@@ -30,6 +30,7 @@ typedef struct {
     char    *fname;
     char    *src;
     char    *dst;
+    char    *ldst;
     ftype_t type;
     off_t   size;
     uid_t   uid;
@@ -40,8 +41,8 @@ typedef struct {
 } file_t;
 
 
-// create file_t struct from given path
-file_t  *f_new(char *fname);
+// create file_t struct from given source and destination paths
+file_t *f_new(char *src, char *dst);
 
 // delete given file_t struct
 void    f_delete(file_t *file);

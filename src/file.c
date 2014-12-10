@@ -27,14 +27,14 @@
 #include <errno.h>                      /* clear errno if !F_OK     */
 
 
-file_t *f_new(char *fname)
+file_t *f_new(char *src, char *dst)
 {
-    if (access(fname, F_OK) != 0)
+    if (access(src, F_OK) != 0)
         return NULL;
     
     /* determine file type, collect attributes */
     struct stat fstat;
-    if (lstat(fname, &fstat) != 0)
+    if (lstat(src, &fstat) != 0)
         return NULL;
 
     /* create file_t object */
@@ -43,29 +43,34 @@ file_t *f_new(char *fname)
         return NULL;
 
     /* fill type-independent fields */
-    f_item->dst     = NULL;
+    f_item->dst     = (dst != NULL) ? strdup(dst) : NULL;
+    f_item->ldst    = NULL;
     f_item->size    = 0;
     f_item->uid     = 0;
     f_item->gid     = 0;
     f_item->mode    = 0;
     f_item->done    = 0;
-    f_item->src     = fname;
-    f_item->fname   = basename(fname);
+    f_item->src     = strdup(src);
+    f_item->fname   = strdup(path_base(f_item->src));
 
     /* fill type-dependent fields */
     if (S_ISLNK(fstat.st_mode)) {
-        /* symlink */
+        /* symlink: read target */
         f_item->type    = SLINK;
-        f_item->dst     = f_item->src;
-        f_item->src     = malloc(fstat.st_size + 1);
-        if (readlink(fname, f_item->src, fstat.st_size) != fstat.st_size) {
+        f_item->ldst    = malloc(fstat.st_size + 1);
+        if (readlink(src, f_item->ldst, fstat.st_size) != fstat.st_size) {
+            free(f_item->src);
+            free(f_item->fname);
+            free(f_item->ldst);
             free(f_item);
             return NULL;
         }
-        f_item->src[fstat.st_size] = '\0';
+        f_item->ldst[fstat.st_size] = '\0';
     } else {
         /* POSIX: uid, modes etc. not defined by lstat(), use stat() */
-        if (stat(fname, &fstat) != 0) {
+        if (stat(src, &fstat) != 0) {
+            free(f_item->src);
+            free(f_item->fname);
             free(f_item);
             return NULL;
         }
@@ -83,6 +88,8 @@ file_t *f_new(char *fname)
             f_item->type = RDIR;
         } else {
             /* unknown object, abort */
+            free(f_item->src);
+            free(f_item->fname);
             free(f_item);
             return NULL;
         }
@@ -93,8 +100,12 @@ file_t *f_new(char *fname)
 
 void f_delete(file_t *file)
 {
-    if (file->type == SLINK)
-        free(file->src);
+    free(file->src);
+    if (file->dst != NULL)
+        free(file->dst);
+    if (file->ldst != NULL)
+        free(file->ldst);
+    free(file->fname);
 
     free(file);
 }
@@ -105,23 +116,21 @@ int f_equal(file_t *a, file_t *b)
     if (a->type != b->type)
         return 0;
 
-    /* compare size */
-    if (a->size != b->size)
+    /* if regular files: compare sizes */
+    if (a->type == RFILE && a->size != b->size)
         return 0;
 
     /* compare owner */
     if (a->uid != b->uid || a->gid != b->gid)
         return 0;
 
-    /* compare modification times */
-    if (a->times.modtime != b->times.modtime)
+    /* if no symlink: compare modification times */
+    if (a->type != SLINK && a->times.modtime != b->times.modtime)
         return 0;
 
-    /* if symlink: compare destination */
-    if (a->type == SLINK) {
-        if (strcmp(a->src, b->src) != 0)
-            return 0;
-    }
+    /* if symlink: compare link destination */
+    if (a->type == SLINK && strcmp(a->ldst, b->ldst) != 0)
+        return 0;
     
     return 1;
 }
@@ -153,8 +162,8 @@ int f_clone_attrs(file_t *item)
 
 int f_cmpr_dst(const void *a, const void *b)
 {
-    file_t *file_a = (file_t *)a;
-    file_t *file_b = (file_t *)b;
+    file_t *file_a = *(file_t **)a;
+    file_t *file_b = *(file_t **)b;
     
     return strcmp(file_a->dst, file_b->dst);
 }

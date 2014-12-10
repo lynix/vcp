@@ -45,11 +45,18 @@ void print_progr_ps(char perc, char *size, char *bps, char eta_s, char eta_m,
 void print_progr_pm(char perc_f, char perc_t, char *size_f, char *size_t,
         char *bps, char eta_s, char eta_m, char eta_h);
 
-// copy a string including allocation using malloc()
+// concatenate given strings to newly allocated string, must be free()'d
 char *strccat(char *a, char *b);
 
-// construct path string from components
+// construct path string from given components, must be free()'d
 char *path_str(char *path, char *sub);
+
+// return absolute form of given path, must be free()'d
+// (equals realpath(), but supports non-existing files)
+char *clean_path(char *path);
+
+// returns pointer to basename beginning in within given string
+char *path_base(char *path);
 
 // convert byte number to human readable representation (IEC format)
 char *size_str(off_t bytes);

@@ -42,7 +42,7 @@ flist_t *flist_new();
 void    flist_delete(flist_t *list);
 
 // find file item by given source path in given file list
-file_t  *flist_search_src(flist_t *list, file_t *item);
+file_t  *flist_search_src(flist_t *list, char *item);
 
 // add given file item to given file list
 int     flist_add(flist_t *list, file_t *item);
