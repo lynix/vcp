@@ -6,15 +6,15 @@
 SUMMARY
 --------------------------
 
-'vcp' is intended to be a (limited) replacement for 'cp' or 'mv', providing some
-additional features like visual progress information and error handling.
+'vcp' is intended to be a (limited) replacement for 'cp', providing additional
+features like visual progress information and error handling.
 
 
 
 USAGE
 --------------------------
 
-'vcp' is designed to be called similar to 'cp'/'mv':
+'vcp' is designed to be called similar to 'cp':
 
     $ vcp /foo/file1 /bar/directory2 /path/to/destination
 
@@ -48,6 +48,10 @@ Advantages compared to 'cp' (the cool stuff):
                                 dumb overwriting confirmation prompt which
                                 caused the whole transfer to stop just a few
                                 seconds after you left the room... ;) )
+                                
+                                
+'vcp' currently supports regular files, directories and symlinks. Other types,
+e.g. block devices or sockets are not supported and yield errors. 
 
 
 
@@ -63,8 +67,8 @@ that I decided to write a simple replacement.
 I'll try to give this ancient project some new love in form of code style
 improvements and proper abstraction if I find some time.
 
-The goal of 'vcp' is NOT to provide a full replacement for 'cp'/'mv'. It shall
-only be a simple tool for common file transfer operations, providing the
+The goal of 'vcp' is NOT to provide a full replacement for 'cp' or 'mv'. It
+shall only be a simple tool for common file transfer operations, providing the
 aforementioned additional features.
 
 
