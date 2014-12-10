@@ -1,5 +1,6 @@
 CC		= gcc
 CFLAGS	= -Wall -ansi -std=c99 -pedantic -O2 -D_FILE_OFFSET_BITS=64 -pthread -g
+LDFLAGS = -pthread
 DESTDIR	= /usr/local
 
 BIN		= bin/vcp
@@ -9,7 +10,7 @@ OBJS	= $(addprefix obj/,$(notdir $(SRCS:.c=.o)))
 all: $(BIN)
 
 $(BIN): $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^
 
 obj/%.o: src/%.c src/*.h
 	$(CC) $(CFLAGS) -c -o $@ $<
