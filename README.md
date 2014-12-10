@@ -3,13 +3,13 @@
 
 
 ## SUMMARY
---------------------------------------------------------------------------------
+
 *vcp* is intended to be a (limited) replacement for *cp*, providing additional
 features like visual progress information and error handling.
 
 
 ## USAGE
---------------------------------------------------------------------------------
+
 *vcp* is designed to be called similar to *cp*:
 
     $ vcp /foo/file1 /bar/directory2 /path/to/destination
@@ -21,7 +21,7 @@ For a complete list of switches and options please see the help text (`vcp -h`).
 
 
 ## FEATURES
---------------------------------------------------------------------------------
+
 Advantages compared to *cp* (the cool stuff):
 
 * **Progress Information**  
@@ -44,7 +44,7 @@ e.g. block devices or sockets are not supported and yield errors.
 
 
 ## HISTORY / PHILOSOPHY
---------------------------------------------------------------------------------
+
 Back in 2009, after switching from Gentoo to Arch I started missing progress
 information for *cp*/*mv*, which Gentoo had provided via a patch for *coreutils*.
 As I used to copy large files around on a very weak PIII box, this annoyed me so
@@ -60,12 +60,12 @@ aforementioned additional features.
 
 
 ## BUGS / CONTACT
---------------------------------------------------------------------------------
+
 Feel free to send suggestions for improvements or bug reports using the *issues*
 function on GitHub.
 
 
 ## LICENSE
---------------------------------------------------------------------------------
+
 This program is published under the terms of the *GNU General Public License,
 version 3*. See the file LICENSE for more information.
