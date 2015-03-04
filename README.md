@@ -1,12 +1,13 @@
 # vcp - verbose cp
 &copy; *lynix* 2009, 2010, 2014
 
+![](https://github.com/lynix/vcp/blob/master/vcp-2.png)
+
 
 ## SUMMARY
 
 *vcp* is intended to be a (limited) replacement for *cp*, providing additional
 features like visual progress information and error handling.
-
 
 ## USAGE
 
