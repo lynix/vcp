@@ -1,4 +1,5 @@
 # vcp - verbose cp
+[![Build Status](https://travis-ci.org/lynix/vcp.svg?branch=master)](https://travis-ci.org/lynix/vcp)
 &copy; *lynix* 2009, 2010, 2014
 
 ![](https://github.com/lynix/vcp/blob/master/vcp-2.png)
