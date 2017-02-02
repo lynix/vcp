@@ -1,11 +1,15 @@
 CC	?= gcc
-CFLAGS	= -std=c99 -Wall -pedantic -O2 -D_FILE_OFFSET_BITS=64 -pthread -g
+CFLAGS	= -std=c99 -Wall -pedantic -O2 -D_FILE_OFFSET_BITS=64 -pthread
 LDFLAGS = -pthread
 DESTDIR	= /usr/local
 
 BIN	= bin/vcp
 SRCS	= $(wildcard src/*.c)
 OBJS	= $(addprefix obj/,$(notdir $(SRCS:.c=.o)))
+
+ifdef DEBUG
+	CFLAGS += -g
+endif
 
 all: $(BIN)
 
