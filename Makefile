@@ -1,9 +1,9 @@
-CC		= gcc
+CC	= gcc
 CFLAGS	= -Wall -ansi -std=c99 -pedantic -O2 -D_FILE_OFFSET_BITS=64 -pthread -g
 LDFLAGS = -pthread
 DESTDIR	= /usr/local
 
-BIN		= bin/vcp
+BIN	= bin/vcp
 SRCS	= $(wildcard src/*.c)
 OBJS	= $(addprefix obj/,$(notdir $(SRCS:.c=.o)))
 
@@ -24,3 +24,5 @@ clean:
 	rm -f $(BIN) $(OBJS)
 
 .PHONY: clean install
+
+# vim: ts=8
