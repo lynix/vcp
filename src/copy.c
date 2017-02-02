@@ -49,7 +49,7 @@ int copy_file(file_t *file, flist_t *flist, strlist_t *fail_list, opts_t *opts,
 
     /* initialize stats, spawn progress thread if reasonable */
     size_t n_read, n_writt;
-    pthread_t prg_thread = NULL;
+    pthread_t prg_thread;
     progress_alive = 0;
     if (!opts->quiet && file->size > BUFFS*BUFFM) {
         if (pthread_mutex_init(&progress_lock, NULL) != 0) {
