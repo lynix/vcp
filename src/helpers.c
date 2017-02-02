@@ -1,5 +1,5 @@
 /* Copyright lynix <lynix47@gmail.com>, 2009, 2010, 2014
- * 
+ *
  * This file is part of vcp (verbose cp).
  *
  * vcp is free software: you can redistribute it and/or modify
@@ -31,13 +31,13 @@
 void print_error(char *msg, ...)
 {
     va_list argpointer;
-    
+
     va_start(argpointer, msg);
     fprintf(stderr, "vcp: ");
     vfprintf(stderr, msg, argpointer);
     fprintf(stderr, "\n");
     fflush(stderr);
-    
+
     return;
 }
 
@@ -54,20 +54,20 @@ void print_debug(char *msg, ...)
     vprintf(msg, argpointer);
     printf("\n");
     fflush(stdout);
-    
+
     return;
 }
 
 void print_usage()
 {
     puts("vcp  Copyright (C) 2009, 2010, 2014  lynix <lynix47@gmail.com>\n");
-    
+
     puts("This program comes with ABSOLUTELY NO WARRANTY, use at own risk.");
     puts("is free software, and you are welcome to redistribute it under the");
     puts("terms of the GNU General Public License as published by the Free");
     puts("Software Foundation, either version 3 of the License, or (at your");
     puts("option) any later version.\n");
-    
+
     puts("Usage:    vcp [OPTIONS] SOURCE(S) DESTINATION\n");
 
     puts("Behaviour:");
@@ -89,7 +89,7 @@ void print_usage()
     puts("  -D  print debugging messages\n");
 
     printf("This version of vcp was built on %s %s.\n", __DATE__, __TIME__);
-    
+
     return;
 }
 
@@ -97,7 +97,7 @@ char *strccat(char *a, char *b)
 {
     if (a == NULL && b == NULL)
         return NULL;
-    
+
     int len_a = (a == NULL) ? 0 : strlen(a);
     int len_b = (b == NULL) ? 0 : strlen(b);
 
@@ -122,8 +122,8 @@ char *path_str(char *path, char *sub)
     memcpy(result + len_p + 1, sub, len_s);
 
     result[len_p] = '/';
-    result[len_p+len_s+1] = '\0';
-    
+    result[len_p + len_s + 1] = '\0';
+
     return result;
 }
 
@@ -131,8 +131,8 @@ char *clean_path(char *path)
 {
     /* remove trailing '/' */
     size_t len = strlen(path);
-    if (path[len-1] == '/')
-        path[len-1] = '\0';
+    if (path[len - 1] == '/')
+        path[len - 1] = '\0';
 
     /* find start of last path component */
     char *base = path_base(path);
@@ -143,7 +143,7 @@ char *clean_path(char *path)
         dir = ".";
     } else {
         dir = path;
-        *(base-1) = '\0';
+        *(base - 1) = '\0';
     }
     dir = realpath(dir, NULL);
 
@@ -156,7 +156,7 @@ char *clean_path(char *path)
 char *path_base(char *path)
 {
     char *ret = path;
-    for (char *p=path; *p!='\0'; p++)
+    for (char *p = path; *p != '\0'; p++)
         if (*p == '/')
             ret = p + 1;
     if (*ret == '\0')
@@ -167,10 +167,10 @@ char *path_base(char *path)
 
 char *size_str(off_t bytes)
 {
-    
+
     double number = (double)bytes;
     char *unit = "B";
-    
+
     if (number >= 1099511627776) {
         unit = "TiB";
         number = (double)bytes / 1099511627776;
@@ -184,33 +184,33 @@ char *size_str(off_t bytes)
         unit = "KiB";
         number = (double)bytes / 1024;
     }
-    
+
     char *buffer = malloc(MAX_SIZE_L);
     if (buffer == NULL)
         return NULL;
     snprintf(buffer, MAX_SIZE_L, "%.2f %s", number, unit);
-    
+
     return buffer;
 }
 
 char *bar_str(char percent)
 {
-    char *result = malloc(BAR_WIDTH+1);
+    char *result = malloc(BAR_WIDTH + 1);
     if (result == NULL)
         return NULL;
 
     result[0] = '[';
-    result[BAR_WIDTH-1] = ']';
+    result[BAR_WIDTH - 1] = ']';
     result[BAR_WIDTH] = '\0';
 
     double temp = BAR_STEP;
     int i = 1;
-    while ((temp <= percent) && (i < BAR_WIDTH-1)) {
+    while ((temp <= percent) && (i < BAR_WIDTH - 1)) {
         result[i] = '#';
         i++;
         temp += BAR_STEP;
     }
-    while (i < BAR_WIDTH-1) {
+    while (i < BAR_WIDTH - 1) {
         result[i] = '-';
         i++;
     }
@@ -245,7 +245,7 @@ int ask_overwrite(file_t *old, file_t *new)
             }
         }
     } while (answer != 'Y' && answer != 'y' && answer != 'n' &&
-                answer != '\n');
+             answer != '\n');
 
     if (answer == '\n' || answer == 'Y' || answer == 'y') {
         return 1;
@@ -275,38 +275,38 @@ void fail_append(strlist_t *fail_list, char *fname, char *error)
 }
 
 inline void print_progr_bs(char perc, char *bps, char eta_s, char eta_m,
-                    char eta_h)
+                           char eta_h)
 {
     printf("\r %s %3d%% @ %s/s ETA %02d:%02d:%02d   ", bar_str(perc), perc,
-            bps, eta_h, eta_m, eta_s);
-    
+           bps, eta_h, eta_m, eta_s);
+
     return;
 }
 
 inline void print_progr_bm(char perc_f, char perc_t, char *bps, char eta_s,
-                    char eta_m, char eta_h)
+                           char eta_m, char eta_h)
 {
     printf("\rFile: %s %3d%% @ %s/s  |  Total: %s %3d%% ETA %02d:%02d:%02d   ",
-            bar_str(perc_f), perc_f, bps, bar_str(perc_t), perc_t,
-            eta_h, eta_m, eta_s);
-    
+           bar_str(perc_f), perc_f, bps, bar_str(perc_t), perc_t,
+           eta_h, eta_m, eta_s);
+
     return;
 }
 
 inline void print_progr_ps(char perc, char *size, char *bps, char eta_s,
-                    char eta_m, char eta_h)
+                           char eta_m, char eta_h)
 {
     printf("\r %3d%% of %s @ %s/s ETA %02d:%02d:%02d   ", perc, size, bps,
-            eta_h, eta_m, eta_s);
-    
+           eta_h, eta_m, eta_s);
+
     return;
 }
 
 inline void print_progr_pm(char perc_f, char perc_t, char *size_f, char *size_t,
-                    char *bps, char eta_s, char eta_m, char eta_h)
+                           char *bps, char eta_s, char eta_m, char eta_h)
 {
     printf("\rFile: %3d%% of %s @ %s/s  |  Total: %3d%% of %s ETA %02d:%02d:%02d   ",
-            perc_f, size_f, bps, perc_t, size_t, eta_h, eta_m, eta_s);
-    
+           perc_f, size_f, bps, perc_t, size_t, eta_h, eta_m, eta_s);
+
     return;
 }

@@ -1,5 +1,5 @@
 /* Copyright lynix <lynix47@gmail.com>, 2009, 2010, 2014
- * 
+ *
  * This file is part of vcp (verbose cp).
  *
  * vcp is free software: you can redistribute it and/or modify
@@ -33,7 +33,7 @@ flist_t         *file_list;
 
 
 int copy_file(file_t *file, flist_t *flist, strlist_t *fail_list, opts_t *opts,
-        char *buffer, unsigned int buff_size)
+              char *buffer, unsigned int buff_size)
 {
     /* open files */
     FILE *src = fopen(file->src, "r");
@@ -51,7 +51,7 @@ int copy_file(file_t *file, flist_t *flist, strlist_t *fail_list, opts_t *opts,
     size_t n_read, n_writt;
     pthread_t prg_thread;
     progress_alive = 0;
-    if (!opts->quiet && file->size > BUFFS*BUFFM) {
+    if (!opts->quiet && file->size > BUFFS * BUFFM) {
         if (pthread_mutex_init(&progress_lock, NULL) != 0) {
             fail_append(fail_list, file->dst, "failed to initialize mutex");
             return -1;
@@ -72,7 +72,7 @@ int copy_file(file_t *file, flist_t *flist, strlist_t *fail_list, opts_t *opts,
         n_writt = fwrite(buffer, 1, n_read, dst);
         if (progress_alive) {
             pthread_mutex_lock(&progress_lock);
-                progress_bytes += n_read;
+            progress_bytes += n_read;
             pthread_mutex_unlock(&progress_lock);
         }
     } while (n_read > 0 && n_writt == n_read);
@@ -86,8 +86,8 @@ int copy_file(file_t *file, flist_t *flist, strlist_t *fail_list, opts_t *opts,
     /* error handling */
     if (ferror(src) || ferror(dst)) {
         fail_append(fail_list, ferror(src) ? file->src : file->dst,
-                ferror(src) ? "I/O error while reading" :
-                        "unable to open for writing");
+                    ferror(src) ? "I/O error while reading" :
+                    "unable to open for writing");
         fclose(src);
         fclose(dst);
         if (remove(file->dst) != 0)
@@ -185,7 +185,7 @@ void *progress_thread(void *arg)
     while (progress_alive) {
         sleep(1);
         pthread_mutex_lock(&progress_lock);
-            bytes_written = progress_bytes;
+        bytes_written = progress_bytes;
         pthread_mutex_unlock(&progress_lock);
         if (bytes_written > 0) {
             break;
@@ -195,8 +195,8 @@ void *progress_thread(void *arg)
     while (progress_alive) {
         /* get written bytes, calculate speed */
         pthread_mutex_lock(&progress_lock);
-            bytes_written = progress_bytes;
-            time(&now);
+        bytes_written = progress_bytes;
+        time(&now);
         pthread_mutex_unlock(&progress_lock);
         elapsed = now - start;
         if (elapsed <= 0) {
@@ -209,7 +209,7 @@ void *progress_thread(void *arg)
         perc_t = (float)(file_list->bytes_done + bytes_written) /
                  file_list->size * 100;
         remaining_s = (file_list->size - (file_list->bytes_done +
-                      bytes_written)) / bytes_per_sec;
+                                          bytes_written)) / bytes_per_sec;
         eta_s = remaining_s % 60;
         eta_m = (remaining_s % 3600) / 60;
         eta_h = remaining_s / 3600;

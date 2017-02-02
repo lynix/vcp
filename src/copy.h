@@ -1,5 +1,5 @@
 /* Copyright lynix <lynix47@gmail.com>, 2009, 2010, 2014
- * 
+ *
  * This file is part of vcp (verbose cp).
  *
  * vcp is free software: you can redistribute it and/or modify
@@ -25,7 +25,7 @@
 
 // copy regular file given as file_t, use supplied buffer for I/O
 int copy_file(file_t *file, flist_t *flist, strlist_t *fail_list, opts_t *opts,
-        char *buffer, unsigned int buff_size);
+              char *buffer, unsigned int buff_size);
 
 // 'copy' directory given as file_t, i.e. create destination directory
 int copy_dir(file_t *file, opts_t *opts, strlist_t *fail_list);

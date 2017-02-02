@@ -1,5 +1,5 @@
 /* Copyright lynix <lynix47@gmail.com>, 2009, 2010, 2014
- * 
+ *
  * This file is part of vcp (verbose cp).
  *
  * vcp is free software: you can redistribute it and/or modify
@@ -31,7 +31,7 @@ file_t *f_new(char *src, char *dst)
 {
     if (access(src, F_OK) != 0)
         return NULL;
-    
+
     /* determine file type, collect attributes */
     struct stat fstat;
     if (lstat(src, &fstat) != 0)
@@ -94,7 +94,7 @@ file_t *f_new(char *src, char *dst)
             return NULL;
         }
     }
-    
+
     return f_item;
 }
 
@@ -131,14 +131,14 @@ int f_equal(file_t *a, file_t *b)
     /* if symlink: compare link destination */
     if (a->type == SLINK && strcmp(a->ldst, b->ldst) != 0)
         return 0;
-    
+
     return 1;
 }
 
 int f_clone_attrs(file_t *item)
 {
     int retval = 0;
-    
+
     /* set owner uid/gid */
     if (chown(item->dst, item->uid, item->gid) != 0) {
         print_debug("failed to set uid/gid");
@@ -156,7 +156,7 @@ int f_clone_attrs(file_t *item)
         print_debug("failed to set atime/mtime");
         retval = -1;
     }
-    
+
     return retval;
 }
 
@@ -164,6 +164,6 @@ int f_cmpr_dst(const void *a, const void *b)
 {
     file_t *file_a = *(file_t **)a;
     file_t *file_b = *(file_t **)b;
-    
+
     return strcmp(file_a->dst, file_b->dst);
 }

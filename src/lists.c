@@ -1,5 +1,5 @@
 /* Copyright lynix <lynix47@gmail.com>, 2009, 2010, 2014
- * 
+ *
  * This file is part of vcp (verbose cp).
  *
  * vcp is free software: you can redistribute it and/or modify
@@ -49,7 +49,7 @@ flist_t *flist_new()
 
 void flist_delete(flist_t *list)
 {
-    for (ulong i=0; i<list->count; i++)
+    for (ulong i = 0; i < list->count; i++)
         f_delete(list->items[i]);
 
     free(list->items);
@@ -60,7 +60,7 @@ int flist_add(flist_t *list, file_t *file)
 {
     if (list == NULL)
         return -1;
-    
+
     /* expand if necessary (we grow with 2^x here) */
     if (list->count == list->arr_size) {
         ulong size_new = list->arr_size * 2L * sizeof(file_t *);
@@ -69,7 +69,7 @@ int flist_add(flist_t *list, file_t *file)
             return -1;
         list->arr_size *= 2L;
     }
-    
+
     /* insert new item, update counters */
     list->items[list->count] = file;
     ulong temp_c = list->count;
@@ -86,13 +86,13 @@ int flist_add(flist_t *list, file_t *file)
 
     if (file->type == RFILE)
         list->count_f++;
-    
+
     return 0;
 }
 
 file_t *flist_search_src(flist_t *list, char *src)
 {
-    for (ulong i=0; i < list->count; i++) {
+    for (ulong i = 0; i < list->count; i++) {
         if (strcmp(list->items[i]->src, src) == 0 &&
                 list->items[i]->type != SLINK) {
             return list->items[i];
@@ -124,7 +124,7 @@ void flist_print(flist_t *list, opts_t *opts)
     ulong count = 0;
     char mark = 0;
 
-    for (ulong i=0; i<list->count; i++) {
+    for (ulong i = 0; i < list->count; i++) {
 
         file_t *item = list->items[i];
         if (item->done && !opts->delete)
@@ -183,7 +183,7 @@ strlist_t *strlist_new()
 
 void strlist_delete(strlist_t *list)
 {
-    for (ulong i=0; i<list->count; i++)
+    for (ulong i = 0; i < list->count; i++)
         free(list->items[i]);
 
     free(list->items);
@@ -194,7 +194,7 @@ int strlist_add(strlist_t *list, char *item)
 {
     if (list == NULL)
         return -1;
-    
+
     /* expand if necessary (we grow with 2^x here) */
     if (list->count == list->arr_size) {
         ulong new_size = list->arr_size * 2L * sizeof(char *);
@@ -203,7 +203,7 @@ int strlist_add(strlist_t *list, char *item)
             return -1;
         list->arr_size *= 2L;
     }
-    
+
     /* insert new item, update counter */
     list->items[list->count] = item;
     ulong temp = list->count++;
@@ -212,6 +212,6 @@ int strlist_add(strlist_t *list, char *item)
         list->count--;
         return -1;
     }
-    
+
     return 0;
 }

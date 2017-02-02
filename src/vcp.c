@@ -1,5 +1,5 @@
 /* Copyright lynix <lynix47@gmail.com>, 2009, 2010, 2014
- * 
+ *
  * This file is part of vcp (verbose cp).
  *
  * vcp is free software: you can redistribute it and/or modify
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     /* initialize options, set umask */
     init_opts(&opts);
     umask(0);
-    
+
     /* parse command line options */
     int argstart = parse_opts(&opts, argc, argv);
     if (argstart < 0)
@@ -88,13 +88,13 @@ int main(int argc, char *argv[])
         flist_delete(copy_list);
         exit(EXIT_SUCCESS);
     }
-    
+
     /* process copy list */
     if (work_list(copy_list) != 0) {
         flist_delete(copy_list);
         exit(EXIT_FAILURE);
     }
-    
+
     flist_delete(copy_list);
     exit(EXIT_SUCCESS);
 }
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 flist_t *build_list(int argc, int start, char *argv[])
 {
     /* clean destination path */
-    char *dest = clean_path(argv[argc-1]);
+    char *dest = clean_path(argv[argc - 1]);
 
     /* logic checking (do not copy file/dir over dir/file) */
     int num_src = argc - start - 1;
@@ -127,9 +127,9 @@ flist_t *build_list(int argc, int start, char *argv[])
         print_debug("failed to create copy list");
         return NULL;
     }
-    
+
     /* iterate over command line and crawl items, recursively */
-    for (int i=start; i<start+num_src; i++) {
+    for (int i = start; i < start + num_src; i++) {
         char *src = argv[i];
         char *new_dest = dest;
         if (S_ISDIR(dest_stat.st_mode))
@@ -149,7 +149,7 @@ flist_t *build_list(int argc, int start, char *argv[])
     flist_shrink(file_list);
     if (file_list->count > 0)
         flist_sort(file_list);
-    
+
     free(dest);
 
     return file_list;
@@ -176,7 +176,7 @@ int crawl(flist_t *file_list, char *src, char *dst)
 
         if ((f_src->type == RDIR) != (f_dst->type == RDIR)) {
             print_error("type mismatch while trying to replace file with directory or vice versa: '%s', '%s'",
-                    src, dst);
+                        src, dst);
             f_delete(f_src);
             f_delete(f_dst);
             return -1;
@@ -248,7 +248,7 @@ int work_list(flist_t *list)
     }
 
     /* work off the list */
-    for (ulong i=0; i<list->count; i++) {
+    for (ulong i = 0; i < list->count; i++) {
         file_t *item = list->items[i];
 
         /* skip processed items */
@@ -276,7 +276,7 @@ int work_list(flist_t *list)
     free(buffer);
 
     /* re-iterate: update directory attributes, delete items if requested */
-    for (ulong i=list->count-1; i < list->count; i--) {
+    for (ulong i = list->count - 1; i < list->count; i--) {
         file_t *item = list->items[i];
 
         if (item->done != 1) {
@@ -297,17 +297,17 @@ int work_list(flist_t *list)
             item->done = 0;
         }
     }
-    
+
     /* print list of failed items */
     if (fail_list->count > 0) {
         print_error("the following errors occured:");
-        for (ulong i=0; i < fail_list->count; i++) {
+        for (ulong i = 0; i < fail_list->count; i++) {
             printf("   %s\n", fail_list->items[i]);
         }
         strlist_delete(fail_list);
         return -1;
     }
-    
+
     strlist_delete(fail_list);
 
     return 0;

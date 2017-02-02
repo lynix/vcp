@@ -1,5 +1,5 @@
 /* Copyright lynix <lynix47@gmail.com>, 2009, 2010, 2014
- * 
+ *
  * This file is part of vcp (verbose cp).
  *
  * vcp is free software: you can redistribute it and/or modify
@@ -39,11 +39,11 @@ void print_debug(char *string, ...);
 // print progress information in various formats
 void print_progr_bs(char perc, char *bps, char eta_s, char eta_m, char eta_h);
 void print_progr_bm(char perc_f, char perc_t, char *bps, char eta_s, char eta_m,
-        char eta_h);
+                    char eta_h);
 void print_progr_ps(char perc, char *size, char *bps, char eta_s, char eta_m,
-        char eta_h);
+                    char eta_h);
 void print_progr_pm(char perc_f, char perc_t, char *size_f, char *size_t,
-        char *bps, char eta_s, char eta_m, char eta_h);
+                    char *bps, char eta_s, char eta_m, char eta_h);
 
 // concatenate given strings to newly allocated string, must be free()'d
 char *strccat(char *a, char *b);

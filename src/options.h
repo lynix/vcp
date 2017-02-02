@@ -1,5 +1,5 @@
 /* Copyright lynix <lynix47@gmail.com>, 2009, 2010, 2014
- * 
+ *
  * This file is part of vcp (verbose cp).
  *
  * vcp is free software: you can redistribute it and/or modify
@@ -26,18 +26,18 @@
 
 
 typedef struct {
-    unsigned int bars            :1;
-    unsigned int force           :1;
-    unsigned int filenames       :1;
-    unsigned int sync            :1;
-    unsigned int delete          :1;
-    unsigned int keep            :1;
-    unsigned int quiet           :1;
-    unsigned int update          :1;
-    unsigned int verbose         :1;
-    unsigned int pretend         :1;
-    unsigned int debug           :1;
-    unsigned int ignore_uid_err  :1;
+    unsigned int bars            : 1;
+    unsigned int force           : 1;
+    unsigned int filenames       : 1;
+    unsigned int sync            : 1;
+    unsigned int delete          : 1;
+    unsigned int keep            : 1;
+    unsigned int quiet           : 1;
+    unsigned int update          : 1;
+    unsigned int verbose         : 1;
+    unsigned int pretend         : 1;
+    unsigned int debug           : 1;
+    unsigned int ignore_uid_err  : 1;
 } opts_t;
 
 
