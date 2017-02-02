@@ -1,0 +1,12 @@
+--style=kr
+--indent=spaces=4
+--attach-extern-c
+--indent-switches
+--pad-oper
+--pad-header
+--align-pointer=name
+--align-reference=name
+--convert-tabs 
+--max-code-length=80
+--keep-one-line-statements
+--keep-one-line-blocks
