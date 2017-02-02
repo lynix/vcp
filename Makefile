@@ -23,6 +23,6 @@ install: $(BIN)
 clean:
 	rm -f $(BIN) $(OBJS)
 
-.PHONY: clean install
+.PHONY: all install clean
 
 # vim: ts=8
