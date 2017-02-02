@@ -1,5 +1,5 @@
 CC	?= gcc
-CFLAGS	= -Wall -ansi -std=c99 -pedantic -O2 -D_FILE_OFFSET_BITS=64 -pthread -g
+CFLAGS	= -std=c99 -Wall -pedantic -O2 -D_FILE_OFFSET_BITS=64 -pthread -g
 LDFLAGS = -pthread
 DESTDIR	= /usr/local
 
