@@ -1,45 +1,32 @@
 # Contributor: lynix <lynix47@gmail.com>
-pkgname=verbose-cp
-pkgver=20091019
+
+pkgname=verbose-cp-git
+pkgver=r70.d7686cd
 pkgrel=1
 pkgdesc="cp with progress output and some nice features"
 arch=('i686' 'x86_64')
-url="http://lynix.github.com/vcp"
+url="https://github.com/lynix/vcp"
 license=('GPL')
 makedepends=('git' 'glibc')
 depends=('glibc')
-source=()
-md5sums=()
 provides=('verbose-cp')
-conflicts=('verbose-cp')
+conflicts=('vcp')
+source=("git://github.com/lynix/vcp.git")
+md5sums=('SKIP')
 
-_gitroot="git://github.com/lynix/vcp.git"
-_gitname="vcp"
+pkgver() {
+  cd "vcp"
+  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
 
 build() {
+	cd "${srcdir}/vcp"
+  make
+}
 
-	cd ${srcdir}
-	msg "Connecting to GIT server..."
-  if [ -d $_gitname ] ; then
-    rm -r $_gitname
-  fi
-  git clone $_gitroot
-
-  msg "GIT checkout done or server timeout"
-  msg "Starting make..."
-
-  if [ -d $_gitname-build ]; then
-    rm -rf $_gitname-build
-  fi
-  # Copy Latest files to Build Directory
-  git clone ${srcdir}/$_gitname ${srcdir}/$_gitname-build
-  cd ${srcdir}/$_gitname-build
-
-  # Build Source
-  make || return 1
-
-  # Install Source
-  make install || return 1
+package() {
+	cd "${srcdir}/vcp"
+	make DESTDIR="${pkgdir}/usr" install
 }
 
 # vim:set ts=2 sw=2 et:
